@@ -3,20 +3,14 @@ from pydantic_settings import BaseSettings
 from typing import List
 
 class Settings(BaseSettings):
-    # App Settings
-    APP_NAME: str = "EMA VWAP Binance Futures Scanner"
-    APP_VERSION: str = "2.0.0"
+    # App Settings (runs zero-config out of the box)
+    APP_NAME: str = "EMA VWAP Binance Futures 24/7 Scanner"
+    APP_VERSION: str = "2.1.0"
     HOST: str = "0.0.0.0"
     PORT: int = int(os.getenv("PORT", "8000"))
     DEBUG: bool = os.getenv("DEBUG", "false").lower() == "true"
 
-    # Telegram Settings
-    TELEGRAM_BOT_TOKEN: str = os.getenv("TELEGRAM_BOT_TOKEN", "")
-    TELEGRAM_CHAT_ID: str = os.getenv("TELEGRAM_CHAT_ID", "")
-    TELEGRAM_ENABLED: bool = os.getenv("TELEGRAM_ENABLED", "true").lower() == "true"
-    TELEGRAM_COOLDOWN_MINUTES: int = int(os.getenv("TELEGRAM_COOLDOWN_MINUTES", "15"))
-
-    # Binance Settings
+    # Binance Perpetuals Settings
     BINANCE_FUTURES_BASE_URL: str = "https://fapi.binance.com"
     BINANCE_TIMEFRAME: str = os.getenv("BINANCE_TIMEFRAME", "5m") # 1m, 3m, 5m, 15m, 30m, 1h, 4h, 1d
     SCAN_INTERVAL_SECONDS: int = int(os.getenv("SCAN_INTERVAL_SECONDS", "30"))
@@ -35,17 +29,16 @@ class Settings(BaseSettings):
     REQUIRE_WEEKLY_VWAP: bool = os.getenv("REQUIRE_WEEKLY_VWAP", "false").lower() == "true"
     BAR_COOLDOWN: int = int(os.getenv("BAR_COOLDOWN", "3"))
 
-    # Database
+    # Database Path
     DATABASE_PATH: str = os.getenv("DATABASE_PATH", "signals.db")
 
-    # Target Symbols (empty list means all TRADING USDT perpetuals)
+    # Target Symbols fallback
     WATCHLIST: List[str] = [
         "BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT", 
         "XRPUSDT", "ADAUSDT", "DOGEUSDT", "AVAXUSDT"
     ]
 
     class Config:
-        env_file = ".env"
         extra = "ignore"
 
 settings = Settings()

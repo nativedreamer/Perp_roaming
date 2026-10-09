@@ -13,7 +13,6 @@ from pydantic import BaseModel
 
 from backend.config import settings
 from backend.database import SignalDatabase
-from backend.telegram_bot import TelegramNotifier
 from backend.scanner import BinanceFuturesScanner
 from backend.strategy import Candle, calculate_indicators, evaluate_signal, calculate_levels
 
@@ -26,36 +25,24 @@ logger = logging.getLogger("binance_scanner")
 
 # Global singletons
 db = SignalDatabase(settings.DATABASE_PATH)
-notifier = TelegramNotifier(
-    bot_token=settings.TELEGRAM_BOT_TOKEN,
-    chat_id=settings.TELEGRAM_CHAT_ID,
-    cooldown_minutes=settings.TELEGRAM_COOLDOWN_MINUTES
-)
-scanner = BinanceFuturesScanner(db, notifier)
+scanner = BinanceFuturesScanner(db)
 
 # Background tasks lifecycle
 background_tasks_set = set()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Starting up %s v%s...", settings.APP_NAME, settings.APP_VERSION)
+    logger.info("Starting up %s v%s (24/7 autonomous mode)...", settings.APP_NAME, settings.APP_VERSION)
     
     # Start 24/7 scanner loop in background
     scanner_task = asyncio.create_task(scanner.start())
     background_tasks_set.add(scanner_task)
     scanner_task.add_done_callback(background_tasks_set.discard)
 
-    # Start Telegram command polling if configured
-    if settings.TELEGRAM_BOT_TOKEN:
-        tg_task = asyncio.create_task(notifier.start_polling(lambda: db, lambda: scanner))
-        background_tasks_set.add(tg_task)
-        tg_task.add_done_callback(background_tasks_set.discard)
-
     yield
 
-    logger.info("Shutting down background tasks...")
+    logger.info("Shutting down background scanner...")
     scanner.stop()
-    await notifier.close()
     for task in background_tasks_set:
         task.cancel()
 
@@ -117,7 +104,6 @@ async def get_system_status():
         "symbols_tracked": len(scanner.valid_symbols),
         "trending_pairs_count": len(scanner.trending_pairs),
         "last_scan_time": scanner.last_scan_time.isoformat() if scanner.last_scan_time else None,
-        "telegram_configured": notifier.is_configured(),
         "stats": stats,
         "timestamp_utc": datetime.utcnow().isoformat()
     }
@@ -212,41 +198,6 @@ async def update_settings(payload: SettingsUpdate):
             "tp1_ratio": settings.TP1_RATIO
         }
     }
-
-@app.post("/api/telegram/test")
-async def test_telegram_alert():
-    """
-    Dispatches a simulated signal to test Telegram bot credentials.
-    """
-    if not settings.TELEGRAM_BOT_TOKEN:
-        raise HTTPException(status_code=400, detail="TELEGRAM_BOT_TOKEN is not configured in .env")
-    if not settings.TELEGRAM_CHAT_ID:
-        raise HTTPException(status_code=400, detail="TELEGRAM_CHAT_ID is not configured in .env")
-
-    mock_signal = {
-        "symbol": "BTCUSDT",
-        "direction": "LONG",
-        "strategy": "EMA/VWAP (Test Alert)",
-        "timeframe": scanner.timeframe,
-        "entry_price": 68500.00,
-        "sl_price": 67800.00,
-        "tp1_price": 69550.00,
-        "tp2_price": 70600.00,
-        "tp3_price": 71650.00,
-        "risk_reward_ratio": 1.5,
-        "atr": 280.0
-    }
-    
-    msg = (
-        "🧪 <b>TEST NOTIFICATION · 24/7 BINANCE SCANNER</b>\n"
-        "Your Telegram bot configuration is working correctly!\n\n"
-        + notifier.format_signal_message(mock_signal)
-    )
-    success = await notifier.send_message(msg)
-    if success:
-        return {"success": True, "message": "Test notification dispatched to Telegram."}
-    else:
-        raise HTTPException(status_code=500, detail="Failed to deliver Telegram message. Check Bot Token & Chat ID permissions.")
 
 @app.post("/api/backtest")
 async def run_backtest(req: BacktestRequest):
@@ -355,11 +306,13 @@ async def download_project_zip():
     Returns the ready-to-upload ZIP archive for the GitHub repository.
     """
     root_dir = os.path.dirname(os.path.dirname(__file__))
-    zip_path = os.path.join(root_dir, "binance-scanner-247-telegram.zip")
+    zip_path = os.path.join(root_dir, "binance-scanner-247.zip")
+    if not os.path.exists(zip_path):
+        zip_path = os.path.join(root_dir, "binance-scanner-247-telegram.zip")
     if os.path.exists(zip_path):
         return FileResponse(
             zip_path,
-            filename="binance-scanner-247-telegram.zip",
+            filename="binance-scanner-247.zip",
             media_type="application/zip"
         )
     raise HTTPException(status_code=404, detail="ZIP archive not found.")

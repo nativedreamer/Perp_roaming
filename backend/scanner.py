@@ -10,14 +10,12 @@ from backend.database import SignalDatabase
 from backend.strategy import (
     Candle, calculate_indicators, evaluate_signal, calculate_levels, get_trend_state
 )
-from backend.telegram_bot import TelegramNotifier
 
 logger = logging.getLogger(__name__)
 
 class BinanceFuturesScanner:
-    def __init__(self, db: SignalDatabase, notifier: TelegramNotifier):
+    def __init__(self, db: SignalDatabase):
         self.db = db
-        self.notifier = notifier
         self.session: Optional[aiohttp.ClientSession] = None
         
         # State
@@ -312,8 +310,6 @@ class BinanceFuturesScanner:
                         triggered_signals.append(res)
                         
                         logger.info("🔥 SIGNAL TRIGGERED: %s %s @ %s", res["symbol"], res["direction"], res["entry_price"])
-                        # Send instant Telegram notification
-                        asyncio.create_task(self.notifier.notify_signal(res))
 
                 scanned_so_far = min(i + batch_size, total_count)
                 self.scan_progress = f"Scanned {scanned_so_far}/{total_count} symbols ({len(self.trending_pairs)} trending, {len(triggered_signals)} signals)"

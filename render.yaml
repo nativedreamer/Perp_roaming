@@ -15,14 +15,6 @@ services:
         value: 5m
       - key: SCAN_INTERVAL_SECONDS
         value: 30
-      - key: TELEGRAM_BOT_TOKEN
-        sync: false
-      - key: TELEGRAM_CHAT_ID
-        sync: false
-      - key: TELEGRAM_ENABLED
-        value: true
-      - key: TELEGRAM_COOLDOWN_MINUTES
-        value: 15
       - key: TREND_FILTER
         value: zone
       - key: REQUIRE_CANDLE_COLOR

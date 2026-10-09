@@ -20,7 +20,6 @@ RUN pip install --no-cache-dir -r /app/requirements.txt
 # Copy source code and frontend
 COPY backend/ /app/backend/
 COPY frontend/ /app/frontend/
-COPY .env.example /app/.env.example
 
 # Expose HTTP port (Render uses $PORT or default 8000)
 EXPOSE 8000

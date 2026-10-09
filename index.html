@@ -85,7 +85,7 @@
       </div>
     </div>
     <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
-      <a href="/binance-scanner-247-telegram.zip" download="binance-scanner-247-telegram.zip" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; background: #238636; color: #ffffff; font-weight: 700; font-size: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); box-shadow: 0 2px 4px rgba(0,0,0,0.3); transition: background 0.2s;" onmouseover="this.style.background='#2ea043'" onmouseout="this.style.background='#238636'">
+      <a href="/binance-scanner-247.zip" download="binance-scanner-247.zip" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; background: #238636; color: #ffffff; font-weight: 700; font-size: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); box-shadow: 0 2px 4px rgba(0,0,0,0.3); transition: background 0.2s;" onmouseover="this.style.background='#2ea043'" onmouseout="this.style.background='#238636'">
         <span>📦</span> Download GitHub Repo (.zip)
       </a>
       <div style="text-align: right;">
@@ -100,9 +100,6 @@
     <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
       <span id="backendBadge" class="badge badge-online">
         <span class="dot"></span> <span id="backendText">Connecting to Python Service...</span>
-      </span>
-      <span id="tgBadge" class="badge badge-tg">
-        <span class="dot"></span> <span id="tgText">Telegram: Active</span>
       </span>
       <span class="sub" id="uptimeText">Uptime: --</span>
     </div>
@@ -180,9 +177,9 @@
         </div>
       </div>
 
-      <!-- SCANNER CONTROLS & TELEGRAM -->
+      <!-- SCANNER CONTROLS -->
       <div class="card">
-        <h2>Engine & Telegram Controls</h2>
+        <h2>Engine Controls</h2>
         
         <button class="start" id="startBtn" onclick="toggleScannerEngine()">
           ▶ RESUME 24/7 SCANNER
@@ -190,20 +187,6 @@
         <button class="action-sub" onclick="triggerManualScan()">
           ⚡ Force Immediate Scan Cycle
         </button>
-
-        <!-- Telegram Test & Alert Settings -->
-        <div class="tg-box">
-          <div style="font-weight: 700; color: var(--a); margin-bottom: 4px; display: flex; justify-content: space-between;">
-            <span>Telegram Bot Alerts</span>
-            <span id="tgStatusMini" style="font-size: 10px; color: var(--g);">CONFIGURED</span>
-          </div>
-          <div class="small">
-            Auto-dispatches formatted alerts (Pair, Direction, Entry, SL, TP1-TP3, RRR) with anti-spam cooldown.
-          </div>
-          <button class="action" onclick="sendTelegramTestAlert()" style="font-size: 11px; padding: 6px 10px;">
-            📨 Send Test Notification to Telegram
-          </button>
-        </div>
 
         <div class="status" id="status" style="margin-top: 10px;">Connecting to scanner service...</div>
         <div class="next"><i id="bar"></i></div>
@@ -357,10 +340,6 @@
 
         // Sync Status Message
         $('status').innerHTML = `<b>Status:</b> ${data.scan_progress}<br>Scanned: <b>${data.symbols_tracked}</b> active Binance futures symbols on <b>${data.timeframe}</b>`;
-        
-        // Sync Telegram status
-        $('tgText').textContent = data.telegram_configured ? 'Telegram: Active' : 'Telegram: Token Needed';
-        $('tgStatusMini').textContent = data.telegram_configured ? 'CONFIGURED' : 'UNCONFIGURED';
 
         // Render Stats
         if (data.stats) {
@@ -487,20 +466,6 @@
         $('status').innerHTML = `<b>Manual Scan Triggered:</b> ${data.message}`;
       } catch (e) {
         alert("Failed to trigger scan: " + e.message);
-      }
-    }
-
-    async function sendTelegramTestAlert() {
-      try {
-        const res = await fetch(getApiUrl('/api/telegram/test'), { method: 'POST' });
-        const data = await res.json();
-        if (data.success) {
-          alert("✅ Test signal successfully dispatched to Telegram!");
-        } else {
-          alert("Telegram notice: " + (data.detail || data.message));
-        }
-      } catch (e) {
-        alert("Telegram dispatch error: " + e.message + "\nEnsure TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID are set in .env");
       }
     }
 
