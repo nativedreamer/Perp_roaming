@@ -69,9 +69,8 @@
     .badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; }
     .badge-online { background: rgba(0, 230, 118, 0.15); color: var(--g); border: 1px solid rgba(0, 230, 118, 0.3); }
     .badge-offline { background: rgba(255, 23, 68, 0.15); color: var(--r); border: 1px solid rgba(255, 23, 68, 0.3); }
-    .badge-tg { background: rgba(34, 211, 238, 0.15); color: var(--a); border: 1px solid rgba(34, 211, 238, 0.3); }
+    .badge-browser { background: rgba(34, 211, 238, 0.15); color: var(--a); border: 1px solid rgba(34, 211, 238, 0.3); }
     .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-    .tg-box { background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 8px; padding: 10px; margin-top: 10px; }
   </style>
 </head>
 <body>
@@ -81,7 +80,7 @@
     <div>
       <h1>EMA VWAP <span>· 24/7 Binance Futures Scanner</span></h1>
       <div class="sub">
-        EMA 11/34 crossover · VWAP vs EMA 200 zone · confirmed bar close · ATR TP/SL · Python 24/7 Engine
+        EMA 11/34 crossover · VWAP vs EMA 200 zone · confirmed bar close · ATR TP/SL · Autonomous In-App Engine
       </div>
     </div>
     <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
@@ -96,17 +95,17 @@
   </header>
 
   <!-- SYSTEM & SERVICE STATUS BANNER -->
-  <div class="warn">
+  <div class="warn" id="statusBanner">
     <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-      <span id="backendBadge" class="badge badge-online">
-        <span class="dot"></span> <span id="backendText">Connecting to Python Service...</span>
+      <span id="backendBadge" class="badge badge-browser">
+        <span class="dot"></span> <span id="backendText">Initializing Live Scanner...</span>
       </span>
-      <span class="sub" id="uptimeText">Uptime: --</span>
+      <span class="sub" id="uptimeText">Render is optional · In-Browser live mode active</span>
     </div>
-    <div style="display: flex; gap: 6px; align-items: center;">
-      <span class="sub">Backend URL:</span>
-      <input id="apiBaseInput" value="" placeholder="Auto (Relative /api)" style="width: 170px; padding: 4px 6px; font-size: 11px;">
-      <button onclick="reconnectApi()" style="padding: 4px 8px; font-size: 11px; background: var(--b); color: var(--t);">Save</button>
+    <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+      <span class="sub">Optional Cloud Backend:</span>
+      <input id="apiBaseInput" value="" placeholder="e.g. https://your-app.onrender.com" style="width: 220px; padding: 4px 6px; font-size: 11px;">
+      <button onclick="reconnectApi()" style="padding: 4px 8px; font-size: 11px; background: var(--b); color: var(--t);">Connect</button>
     </div>
   </div>
 
@@ -181,14 +180,14 @@
       <div class="card">
         <h2>Engine Controls</h2>
         
-        <button class="start" id="startBtn" onclick="toggleScannerEngine()">
-          ▶ RESUME 24/7 SCANNER
+        <button class="start stop" id="startBtn" onclick="toggleScannerEngine()">
+          ■ PAUSE SCANNER
         </button>
         <button class="action-sub" onclick="triggerManualScan()">
           ⚡ Force Immediate Scan Cycle
         </button>
 
-        <div class="status" id="status" style="margin-top: 10px;">Connecting to scanner service...</div>
+        <div class="status" id="status" style="margin-top: 10px;">Initializing continuous scanner...</div>
         <div class="next"><i id="bar"></i></div>
       </div>
 
@@ -220,7 +219,7 @@
         <input id="btBars" type="number" value="500" min="250" max="1000">
 
         <button class="action" id="btRun" onclick="runBacktest()">Run Historical Back-Test</button>
-        <div class="small">Simulates complete bar entries, SL, and TP1-TP4 targets over Binance historical klines.</div>
+        <div class="small">Simulates complete bar entries, SL, and TP1-TP4 targets over Binance historical klines. Runs directly in your browser.</div>
         <div class="status" id="btStatus" style="margin-top: 8px;">No back-test run yet.</div>
       </div>
 
@@ -248,9 +247,16 @@
 
       <!-- LIVE SIGNALS LOG TABLE -->
       <div class="card">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-          <h2>Live Persistent Signal Feed (SQLite signals.db)</h2>
-          <span class="sub" id="signalCountText">0 signals recorded</span>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+          <div>
+            <h2>Live Signal Feed <span id="feedModeBadge" style="font-size: 11px; color: var(--a); font-weight: normal;">(In-Browser Autonomous Engine)</span></h2>
+            <span class="sub" id="signalCountText">0 signals recorded</span>
+          </div>
+          <div style="display: flex; gap: 6px; align-items: center;">
+            <button id="soundBtn" onclick="toggleSound()" style="background: var(--p2); color: var(--t); border: 1px solid var(--b); font-size: 11px; padding: 5px 9px;">🔔 Sound: ON</button>
+            <button onclick="exportSignalsCsv()" style="background: var(--p2); color: var(--t); border: 1px solid var(--b); font-size: 11px; padding: 5px 9px;">📥 Export CSV</button>
+            <button onclick="clearSignalsLog()" style="background: var(--p2); color: var(--r); border: 1px solid var(--b); font-size: 11px; padding: 5px 9px;">🗑 Clear</button>
+          </div>
         </div>
         <div class="log">
           <table>
@@ -285,16 +291,27 @@
     // Configuration & State
     let API_BASE = localStorage.getItem('binance_scanner_api_base') || '';
     let isConnectedToBackend = false;
-    let pollTimer = null;
-    let isRunning = false;
+    let isRunning = true;
+    let soundEnabled = localStorage.getItem('binance_scanner_sound') !== 'false';
+    let browserScanTimer = null;
+    let sessionStartTime = Date.now();
+    let nextScanTimestamp = 0;
 
-    // Standalone fallback cache for direct Binance scanning if backend is offline
-    const clientState = {
-      pairs: ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT', 'DOGEUSDT', 'ADAUSDT', 'AVAXUSDT'],
-      signals: [],
-      stats: { total: 0, wins: 0, losses: 0, tp1: 0, tp2: 0, tp3: 0, open: 0 },
-      tickers: {}
-    };
+    // Default Watchlist (Top Binance USDT Perpetual pairs)
+    const WATCHLIST = [
+      'BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT', 
+      'DOGEUSDT', 'ADAUSDT', 'AVAXUSDT', 'LINKUSDT', 'NEARUSDT',
+      'SUIUSDT', 'APTUSDT', 'OPUSDT', 'ARBUSDT', 'DOTUSDT', 'PEPEUSDT'
+    ];
+
+    // Local in-browser storage & signal state
+    let localSignals = [];
+    try {
+      const stored = localStorage.getItem('binance_scanner_signals');
+      if (stored) localSignals = JSON.parse(stored);
+    } catch (e) { localSignals = []; }
+
+    const marketCache = {}; // sym -> { candles: [], lastSignalBar: -1 }
 
     function tz() { return new Date(Date.now() + OFF * 60000); }
     function tm(d) { return d.toISOString().slice(11, 19); }
@@ -306,6 +323,32 @@
       return API_BASE.replace(/\/+$/, '') + endpoint;
     }
 
+    function toggleSound() {
+      soundEnabled = !soundEnabled;
+      localStorage.setItem('binance_scanner_sound', soundEnabled);
+      $('soundBtn').textContent = soundEnabled ? '🔔 Sound: ON' : '🔕 Sound: OFF';
+    }
+
+    function playAlertChime() {
+      if (!soundEnabled) return;
+      try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        const ctx = new AudioContext();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+        osc.frequency.setValueAtTime(880, ctx.currentTime + 0.12); // A5
+        gain.gain.setValueAtTime(0.2, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.36);
+      } catch (e) {}
+    }
+
     function reconnectApi() {
       const val = $('apiBaseInput').value.trim();
       API_BASE = val;
@@ -314,7 +357,301 @@
     }
 
     // ==========================================
-    // BACKEND API SYNC
+    // MATHEMATICAL INDICATORS (CLIENT-SIDE)
+    // ==========================================
+    function calcEma(prevEma, price, period) {
+      if (prevEma === null || prevEma === undefined) return price;
+      const k = 2.0 / (period + 1.0);
+      return price * k + prevEma * (1.0 - k);
+    }
+
+    function calcIndicators(candles, atrPeriod = 14) {
+      let e11 = null, e34 = null, e200 = null, prevClose = null;
+      const results = [];
+      const trList = [];
+
+      for (const c of candles) {
+        e11 = calcEma(e11, c.c, 11);
+        e34 = calcEma(e34, c.c, 34);
+        e200 = calcEma(e200, c.c, 200);
+
+        let tr = c.h - c.l;
+        if (prevClose !== null) {
+          tr = Math.max(c.h - c.l, Math.abs(c.h - prevClose), Math.abs(c.l - prevClose));
+        }
+        trList.push(tr);
+        prevClose = c.c;
+
+        results.push({ e11, e34, e200, atr: 0 });
+      }
+
+      let currAtr = null;
+      for (let i = 0; i < trList.length; i++) {
+        currAtr = calcEma(currAtr, trList[i], atrPeriod);
+        results[i].atr = currAtr;
+      }
+      return results;
+    }
+
+    function calcVwap(candles, index, weekly = false) {
+      if (index < 0 || index >= candles.length) return 0;
+      const targetDate = new Date(candles[index].t);
+      const targetYear = targetDate.getUTCFullYear();
+      const targetDay = targetDate.toISOString().slice(0, 10);
+      
+      let pv = 0, vol = 0;
+      for (let j = index; j >= 0; j--) {
+        const d = new Date(candles[j].t);
+        if (weekly) {
+          // Reset weekly at UTC Monday
+          const dayNum = (targetDate.getUTCDay() + 6) % 7;
+          const diffDays = (targetDate - d) / 86400000;
+          if (diffDays > dayNum + 1) break;
+        } else {
+          // Reset daily at 00:00 UTC
+          if (d.toISOString().slice(0, 10) !== targetDay) break;
+        }
+        const typical = (candles[j].h + candles[j].l + candles[j].c) / 3.0;
+        const v = candles[j].v > 0 ? candles[j].v : 1.0;
+        pv += typical * v;
+        vol += v;
+      }
+      return vol > 0 ? pv / vol : candles[index].c;
+    }
+
+    function evaluateSignalClient(candles, ind, index, trendMode = 'zone', requireCandle = true, requireWeekly = false) {
+      if (index < 2 || index >= candles.length) return null;
+      const curr = candles[index];
+      const currInd = ind[index];
+      const prevInd = ind[index - 1];
+
+      const vwap = calcVwap(candles, index, false);
+      const weeklyVwap = requireWeekly ? calcVwap(candles, index, true) : 0;
+
+      const zoneBull = vwap > currInd.e200;
+      const priceUp = curr.c > vwap && curr.c > currInd.e200;
+      const priceDn = curr.c < vwap && curr.c < currInd.e200;
+
+      let trendUp = zoneBull, trendDn = !zoneBull;
+      if (trendMode === 'none') { trendUp = true; trendDn = true; }
+      else if (trendMode === 'price') { trendUp = priceUp; trendDn = priceDn; }
+
+      if (requireWeekly) {
+        trendUp = trendUp && (curr.c > weeklyVwap);
+        trendDn = trendDn && (curr.c < weeklyVwap);
+      }
+
+      const isGreen = curr.c > curr.o;
+      const isRed = curr.c < curr.o;
+
+      const bullCross = prevInd.e11 <= prevInd.e34 && currInd.e11 > currInd.e34;
+      const bearCross = prevInd.e11 >= prevInd.e34 && currInd.e11 < currInd.e34;
+
+      if (bullCross && trendUp && (!requireCandle || isGreen)) {
+        return { direction: 'LONG', reason: 'EMA 11/34 Bullish Cross + Trend Zone', vwap, atr: currInd.atr };
+      }
+      if (bearCross && trendDn && (!requireCandle || isRed)) {
+        return { direction: 'SHORT', reason: 'EMA 11/34 Bearish Cross + Trend Zone', vwap, atr: currInd.atr };
+      }
+      return null;
+    }
+
+    // ==========================================
+    // CLIENT-SIDE AUTONOMOUS SCANNING LOOP
+    // ==========================================
+    async function runClientScanCycle() {
+      if (!isRunning || isConnectedToBackend) return;
+      const tf = $('tf').value;
+      const trendMode = $('trend').value;
+      const requireCandle = $('candle').value === 'true';
+      const requireWeekly = $('weekly').value === 'true';
+      const atrPeriod = parseInt($('atr').value) || 14;
+      const slMult = parseFloat($('sl').value) || 2.5;
+      const tpRatio = parseFloat($('tp').value) || 1.5;
+      const intervalSec = parseInt($('interval').value) || 30;
+
+      $('status').innerHTML = `Scanning <b>${WATCHLIST.length}</b> Binance Futures pairs on <b>${tf}</b> directly in browser...`;
+      const trending = [];
+
+      // Scan pairs in batches of 4 to stay well within browser connection limits
+      for (let i = 0; i < WATCHLIST.length; i += 4) {
+        if (!isRunning || isConnectedToBackend) break;
+        const batch = WATCHLIST.slice(i, i + 4);
+        await Promise.all(batch.map(async sym => {
+          try {
+            const url = `https://fapi.binance.com/fapi/v1/klines?symbol=${sym}&interval=${tf}&limit=120`;
+            const resp = await fetch(url);
+            if (!resp.ok) return;
+            const raw = await resp.json();
+            const candles = raw.map(k => ({
+              t: parseInt(k[0]),
+              o: parseFloat(k[1]),
+              h: parseFloat(k[2]),
+              l: parseFloat(k[3]),
+              c: parseFloat(k[4]),
+              v: parseFloat(k[5])
+            }));
+            if (candles.length < 50) return;
+
+            const ind = calcIndicators(candles, atrPeriod);
+            const lastIdx = candles.length - 2; // last confirmed closed bar
+            const lastClosed = candles[lastIdx];
+            const currentCandle = candles[candles.length - 1]; // live bar for settlement
+
+            // Trend watch
+            const vwap = calcVwap(candles, lastIdx, false);
+            const isBull = vwap > ind[lastIdx].e200;
+            trending.push(`${sym} ${isBull ? 'UP' : 'DOWN'}`);
+
+            // Check signal
+            marketCache[sym] = marketCache[sym] || { lastSignalBar: -1 };
+            const sig = evaluateSignalClient(candles, ind, lastIdx, trendMode, requireCandle, requireWeekly);
+
+            if (sig && (lastIdx - marketCache[sym].lastSignalBar) >= 3) {
+              marketCache[sym].lastSignalBar = lastIdx;
+              const entry = lastClosed.c;
+              const atr = ind[lastIdx].atr || (entry * 0.01);
+              const slDist = atr * slMult;
+              const tpDist = slDist * tpRatio;
+
+              const slPrice = sig.direction === 'LONG' ? entry - slDist : entry + slDist;
+              const tp1Price = sig.direction === 'LONG' ? entry + tpDist : entry - tpDist;
+              const tp2Price = sig.direction === 'LONG' ? entry + tpDist * 2 : entry - tpDist * 2;
+              const tp3Price = sig.direction === 'LONG' ? entry + tpDist * 3 : entry - tpDist * 3;
+
+              const newSig = {
+                id: Date.now() + '-' + sym,
+                symbol: sym,
+                direction: sig.direction,
+                timeframe: tf,
+                entry_price: entry,
+                sl_price: slPrice,
+                tp1_price: tp1Price,
+                tp2_price: tp2Price,
+                tp3_price: tp3Price,
+                status: 'OPEN',
+                created_at: new Date().toISOString(),
+                tp1_hit: false,
+                tp2_hit: false,
+                tp3_hit: false
+              };
+
+              localSignals.unshift(newSig);
+              localSignals = localSignals.slice(0, 100);
+              localStorage.setItem('binance_scanner_signals', JSON.stringify(localSignals));
+              playAlertChime();
+            }
+
+            // Settle open signals for this pair against live prices
+            settleOpenSignals(sym, currentCandle);
+
+          } catch (e) {}
+        }));
+      }
+
+      // Update Tickers & Trending
+      $('trendList').innerHTML = '<b>Trending pairs:</b> ' + (trending.slice(0, 12).join(' · ') || 'monitoring...');
+      renderClientTickers();
+      renderSignalTable(localSignals);
+      updateClientStats();
+
+      // Schedule next scan
+      scheduleNextBrowserScan(intervalSec);
+    }
+
+    function settleOpenSignals(sym, currentCandle) {
+      let changed = false;
+      for (const s of localSignals) {
+        if (s.symbol !== sym || s.status !== 'OPEN') continue;
+        const isLong = s.direction === 'LONG';
+        const hitSL = isLong ? currentCandle.l <= s.sl_price : currentCandle.h >= s.sl_price;
+        const hitTP1 = isLong ? currentCandle.h >= s.tp1_price : currentCandle.l <= s.tp1_price;
+        const hitTP2 = isLong ? currentCandle.h >= s.tp2_price : currentCandle.l <= s.tp2_price;
+        const hitTP3 = isLong ? currentCandle.h >= s.tp3_price : currentCandle.l <= s.tp3_price;
+
+        if (hitSL) {
+          s.status = s.tp1_hit ? 'TP1 THEN SL' : 'SL HIT';
+          changed = true;
+          continue;
+        }
+        if (hitTP1 && !s.tp1_hit) {
+          s.tp1_hit = true;
+          s.status = 'TP1 HIT';
+          changed = true;
+        }
+        if (hitTP2 && !s.tp2_hit) {
+          s.tp2_hit = true;
+          s.status = 'TP2 HIT';
+          changed = true;
+        }
+        if (hitTP3 && !s.tp3_hit) {
+          s.tp3_hit = true;
+          s.status = 'TP3 HIT';
+          changed = true;
+        }
+      }
+      if (changed) {
+        localStorage.setItem('binance_scanner_signals', JSON.stringify(localSignals));
+      }
+    }
+
+    function updateClientStats() {
+      let wins = 0, losses = 0, tp1 = 0, tp2 = 0, tp3 = 0, open = 0;
+      for (const s of localSignals) {
+        if (s.status === 'OPEN') open++;
+        else if (s.status.includes('TP') || s.tp1_hit) wins++;
+        else if (s.status === 'SL HIT') losses++;
+
+        if (s.tp1_hit || s.status.includes('TP1')) tp1++;
+        if (s.tp2_hit || s.status.includes('TP2')) tp2++;
+        if (s.tp3_hit || s.status.includes('TP3')) tp3++;
+      }
+      const total = wins + losses;
+      const wr = total > 0 ? ((wins / total) * 100).toFixed(1) : '0.0';
+      renderStats({
+        total_signals: localSignals.length,
+        wins, losses, win_rate: wr,
+        tp1_hits: tp1, tp2_hits: tp2, tp3_hits: tp3,
+        open_signals: open
+      });
+    }
+
+    async function renderClientTickers() {
+      try {
+        const resp = await fetch('https://fapi.binance.com/fapi/v1/ticker/24hr');
+        if (!resp.ok) return;
+        const tickers = await resp.json();
+        const topSymbols = WATCHLIST.slice(0, 8);
+        const map = {};
+        for (const t of tickers) map[t.symbol] = t;
+
+        let h = '';
+        for (const sym of topSymbols) {
+          const t = map[sym];
+          if (!t) continue;
+          const ch = parseFloat(t.priceChangePercent) || 0;
+          const pr = parseFloat(t.lastPrice) || 0;
+          h += `
+            <div class="ticker">
+              <b>${sym} <span class="${ch >= 0 ? 'up' : 'dn'}">${ch >= 0 ? 'BULL' : 'BEAR'}</span></b>
+              <span class="price">${fmt(pr)}</span><br>
+              <span class="${ch >= 0 ? 'up' : 'dn'}">${ch >= 0 ? '▲' : '▼'} ${Math.abs(ch).toFixed(2)}%</span>
+            </div>
+          `;
+        }
+        if (h) $('tickers').innerHTML = h;
+      } catch (e) {}
+    }
+
+    function scheduleNextBrowserScan(sec) {
+      clearTimeout(browserScanTimer);
+      nextScanTimestamp = Date.now() + sec * 1000;
+      browserScanTimer = setTimeout(runClientScanCycle, sec * 1000);
+      $('status').innerHTML = `Live in-browser scan complete. Next cycle in <b>${sec}s</b> · Signals persist in LocalStorage.`;
+    }
+
+    // ==========================================
+    // BACKEND API SYNC (FOR RENDER / VPS USERS)
     // ==========================================
     async function syncSystemStatus() {
       try {
@@ -324,8 +661,9 @@
         
         isConnectedToBackend = true;
         $('backendBadge').className = 'badge badge-online';
-        $('backendText').textContent = 'Python 24/7 Engine Active';
+        $('backendText').textContent = 'Cloud Python Engine (Render/VPS Active)';
         $('uptimeText').textContent = `Uptime: ${data.uptime}`;
+        $('feedModeBadge').textContent = '(Cloud SQLite Backend)';
 
         // Sync Running Button
         isRunning = data.scanner_running;
@@ -338,28 +676,42 @@
           btn.className = 'start';
         }
 
-        // Sync Status Message
         $('status').innerHTML = `<b>Status:</b> ${data.scan_progress}<br>Scanned: <b>${data.symbols_tracked}</b> active Binance futures symbols on <b>${data.timeframe}</b>`;
+        if (data.stats) renderStats(data.stats);
 
-        // Render Stats
-        if (data.stats) {
-          renderStats(data.stats);
-        }
-
-        // Fetch Recent Signals & Tickers
-        await Promise.all([syncSignals(), syncTickers()]);
+        await Promise.all([syncBackendSignals(), syncBackendTickers()]);
 
       } catch (err) {
-        // Fallback to standalone mode
+        // Fallback gracefully to autonomous browser live engine
+        if (isConnectedToBackend) {
+          console.log("Cloud backend disconnected, falling back to autonomous browser engine.");
+        }
         isConnectedToBackend = false;
-        $('backendBadge').className = 'badge badge-offline';
-        $('backendText').textContent = 'Backend Offline (Direct Mode)';
-        $('status').innerHTML = `Standalone mode active. Enter your Render URL above (e.g. <code>https://your-app.onrender.com</code>) or run the Python backend.`;
-        fallbackDirectScan();
+        $('backendBadge').className = 'badge badge-browser';
+        $('backendText').textContent = 'In-Browser Live Scanner (Active · 100% Free)';
+        
+        const elapsed = Math.floor((Date.now() - sessionStartTime) / 1000);
+        const mins = Math.floor(elapsed / 60);
+        const secs = elapsed % 60;
+        $('uptimeText').textContent = `Session: ${mins}m ${secs}s · Render is optional! Tab scans autonomously.`;
+        $('feedModeBadge').textContent = '(In-Browser LocalStorage + Auto-Settle)';
+
+        const btn = $('startBtn');
+        if (isRunning) {
+          btn.textContent = '■ PAUSE SCANNER';
+          btn.className = 'start stop';
+        } else {
+          btn.textContent = '▶ RESUME SCANNER';
+          btn.className = 'start';
+        }
+
+        if (!nextScanTimestamp || Date.now() >= nextScanTimestamp) {
+          runClientScanCycle();
+        }
       }
     }
 
-    async function syncSignals() {
+    async function syncBackendSignals() {
       try {
         const res = await fetch(getApiUrl('/api/signals?limit=50'));
         if (!res.ok) return;
@@ -368,17 +720,14 @@
       } catch (e) {}
     }
 
-    async function syncTickers() {
+    async function syncBackendTickers() {
       try {
         const res = await fetch(getApiUrl('/api/tickers'));
         if (!res.ok) return;
         const data = await res.json();
-        
-        // Trending
         const trending = data.trending || [];
         $('trendList').innerHTML = '<b>Trending pairs:</b> ' + (trending.length ? trending.slice(0, 15).join(' · ') : 'scanning...');
 
-        // Tickers Grid
         let h = '';
         const tickers = data.tickers || [];
         for (const t of tickers.slice(0, 8)) {
@@ -414,9 +763,9 @@
     }
 
     function renderSignalTable(signals) {
-      $('signalCountText').textContent = `${signals.length} signals logged`;
+      $('signalCountText').textContent = `${signals.length} signals recorded`;
       if (!signals.length) {
-        $('feed').innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--d); padding: 20px;">No signals recorded yet. The engine scans 24/7 and records triggers here.</td></tr>';
+        $('feed').innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--d); padding: 20px;">Scanning Binance Perpetual Futures... Signals will appear here in real-time.</td></tr>';
         return;
       }
 
@@ -446,49 +795,98 @@
     // USER ACTIONS
     // ==========================================
     async function toggleScannerEngine() {
-      if (!isConnectedToBackend) {
-        alert("Connecting to backend... If you are hosting on Render, paste your Render service URL in the 'Backend URL' box at the top.");
-        return;
+      isRunning = !isRunning;
+      const btn = $('startBtn');
+      if (isRunning) {
+        btn.textContent = '■ PAUSE SCANNER';
+        btn.className = 'start stop';
+      } else {
+        btn.textContent = '▶ RESUME SCANNER';
+        btn.className = 'start';
       }
-      try {
-        const res = await fetch(getApiUrl('/api/scan/toggle'), { method: 'POST' });
-        const data = await res.json();
-        syncSystemStatus();
-      } catch (e) {
-        alert("Failed to toggle scanner: " + e.message);
+
+      if (isConnectedToBackend) {
+        try {
+          await fetch(getApiUrl('/api/scan/toggle'), { method: 'POST' });
+          syncSystemStatus();
+        } catch (e) {}
+      } else {
+        if (isRunning) {
+          runClientScanCycle();
+        } else {
+          clearTimeout(browserScanTimer);
+          $('status').innerHTML = 'In-browser scanner paused by user.';
+        }
       }
     }
 
     async function triggerManualScan() {
-      try {
-        const res = await fetch(getApiUrl('/api/scan/trigger'), { method: 'POST' });
-        const data = await res.json();
-        $('status').innerHTML = `<b>Manual Scan Triggered:</b> ${data.message}`;
-      } catch (e) {
-        alert("Failed to trigger scan: " + e.message);
+      if (isConnectedToBackend) {
+        try {
+          const res = await fetch(getApiUrl('/api/scan/trigger'), { method: 'POST' });
+          const data = await res.json();
+          $('status').innerHTML = `<b>Manual Scan Triggered:</b> ${data.message}`;
+        } catch (e) {
+          alert("Failed to trigger scan: " + e.message);
+        }
+      } else {
+        $('status').innerHTML = '<b>Force scan cycle triggered...</b>';
+        clearTimeout(browserScanTimer);
+        runClientScanCycle();
       }
     }
 
-    async function applySettings() {
-      if (!isConnectedToBackend) return;
-      const payload = {
-        timeframe: $('tf').value,
-        trend_filter: $('trend').value,
-        require_candle_color: $('candle').value === 'true',
-        require_weekly_vwap: $('weekly').value === 'true',
-        atr_period: parseInt($('atr').value) || 14,
-        sl_atr_mult: parseFloat($('sl').value) || 2.5,
-        tp1_ratio: parseFloat($('tp').value) || 1.5,
-        scan_interval_seconds: parseInt($('interval').value) || 30
-      };
+    function clearSignalsLog() {
+      if (confirm("Clear signal history from this browser?")) {
+        localSignals = [];
+        localStorage.removeItem('binance_scanner_signals');
+        renderSignalTable([]);
+        updateClientStats();
+      }
+    }
 
-      try {
-        await fetch(getApiUrl('/api/settings'), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-      } catch (e) {}
+    function exportSignalsCsv() {
+      if (!localSignals.length) {
+        alert("No signals to export yet.");
+        return;
+      }
+      const headers = ["Time", "Symbol", "Direction", "Timeframe", "Entry", "SL", "TP1", "Status"];
+      const rows = localSignals.map(s => [
+        s.created_at, s.symbol, s.direction, s.timeframe || '5m', s.entry_price, s.sl_price, s.tp1_price, s.status
+      ]);
+      const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `binance_signals_${new Date().toISOString().slice(0,10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    async function applySettings() {
+      if (isConnectedToBackend) {
+        const payload = {
+          timeframe: $('tf').value,
+          trend_filter: $('trend').value,
+          require_candle_color: $('candle').value === 'true',
+          require_weekly_vwap: $('weekly').value === 'true',
+          atr_period: parseInt($('atr').value) || 14,
+          sl_atr_mult: parseFloat($('sl').value) || 2.5,
+          tp1_ratio: parseFloat($('tp').value) || 1.5,
+          scan_interval_seconds: parseInt($('interval').value) || 30
+        };
+        try {
+          await fetch(getApiUrl('/api/settings'), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+        } catch (e) {}
+      } else {
+        // Trigger fresh cycle with new settings immediately
+        if (isRunning) runClientScanCycle();
+      }
     }
 
     async function runBacktest() {
@@ -501,64 +899,136 @@
       btn.disabled = true;
       statusEl.textContent = `Running back-test for ${pair} (${tf}, ${bars} bars)...`;
 
-      try {
-        const res = await fetch(getApiUrl('/api/backtest'), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            symbol: pair,
-            timeframe: tf,
-            bars: bars,
-            trend_filter: $('trend').value,
-            require_candle_color: $('candle').value === 'true',
-            require_weekly_vwap: $('weekly').value === 'true',
-            atr_period: parseInt($('atr').value) || 14,
-            sl_atr_mult: parseFloat($('sl').value) || 2.5,
-            tp1_ratio: parseFloat($('tp').value) || 1.5
-          })
-        });
-
-        if (!res.ok) throw new Error(await res.text());
-        const d = await res.json();
-        
-        statusEl.innerHTML = `
-          <b>${d.symbol} · ${d.timeframe} Back-Test Results:</b><br>
-          Bars tested: <b>${d.bars_tested}</b> · Resolved trades: <b>${d.closed_trades}</b><br>
-          Wins: <span class="call">${d.wins}</span> · Losses: <span class="put">${d.losses}</span> · Win Rate: <b>${d.win_rate}%</b><br>
-          TP hits: TP1: ${d.tp1_hits} | TP2: ${d.tp2_hits} | TP3: ${d.tp3_hits} | TP4: ${d.tp4_hits}<br>
-          Max Loss Streak: <b>${d.max_loss_streak}</b>
-        `;
-      } catch (err) {
-        statusEl.innerHTML = `<span style="color:var(--r)">Back-test error: ${err.message}</span>`;
-      } finally {
+      // If backend is connected, use backend; otherwise run 100% in browser
+      if (isConnectedToBackend) {
+        try {
+          const res = await fetch(getApiUrl('/api/backtest'), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              symbol: pair,
+              timeframe: tf,
+              bars: bars,
+              trend_filter: $('trend').value,
+              require_candle_color: $('candle').value === 'true',
+              require_weekly_vwap: $('weekly').value === 'true',
+              atr_period: parseInt($('atr').value) || 14,
+              sl_atr_mult: parseFloat($('sl').value) || 2.5,
+              tp1_ratio: parseFloat($('tp').value) || 1.5
+            })
+          });
+          if (!res.ok) throw new Error(await res.text());
+          const d = await res.json();
+          renderBacktestResult(d, statusEl);
+        } catch (err) {
+          runClientBacktest(pair, tf, bars, statusEl);
+        } finally {
+          btn.disabled = false;
+        }
+      } else {
+        await runClientBacktest(pair, tf, bars, statusEl);
         btn.disabled = false;
       }
     }
 
-    // ==========================================
-    // STANDALONE DIRECT FALLBACK SCANNER
-    // ==========================================
-    async function fallbackDirectScan() {
-      // Direct client scan to populate UI if backend server is not connected yet
+    async function runClientBacktest(pair, tf, bars, statusEl) {
       try {
-        const resp = await fetch('https://fapi.binance.com/fapi/v1/ticker/24hr');
-        if (!resp.ok) return;
-        const tickers = await resp.json();
-        const usdtPairs = tickers.filter(t => t.symbol.endsWith('USDT')).slice(0, 8);
-        
-        let h = '';
-        for (const t of usdtPairs) {
-          const ch = parseFloat(t.priceChangePercent);
-          h += `
-            <div class="ticker">
-              <b>${t.symbol} <span class="call">BINANCE</span></b>
-              <span class="price">${fmt(parseFloat(t.lastPrice))}</span><br>
-              <span class="${ch >= 0 ? 'up' : 'dn'}">${ch >= 0 ? '▲' : '▼'} ${Math.abs(ch).toFixed(2)}%</span>
-            </div>
-          `;
+        statusEl.textContent = `Downloading ${bars} historical candles from Binance for ${pair}...`;
+        const resp = await fetch(`https://fapi.binance.com/fapi/v1/klines?symbol=${pair}&interval=${tf}&limit=${bars}`);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const raw = await resp.json();
+        const candles = raw.map(k => ({
+          t: parseInt(k[0]),
+          o: parseFloat(k[1]),
+          h: parseFloat(k[2]),
+          l: parseFloat(k[3]),
+          c: parseFloat(k[4]),
+          v: parseFloat(k[5])
+        }));
+        if (candles.length < 50) throw new Error("Insufficient candles returned from Binance.");
+
+        const atrPeriod = parseInt($('atr').value) || 14;
+        const slMult = parseFloat($('sl').value) || 2.5;
+        const tpRatio = parseFloat($('tp').value) || 1.5;
+        const trendMode = $('trend').value;
+        const requireCandle = $('candle').value === 'true';
+        const requireWeekly = $('weekly').value === 'true';
+
+        const ind = calcIndicators(candles, atrPeriod);
+        let wins = 0, losses = 0, tp1 = 0, tp2 = 0, tp3 = 0, tp4 = 0;
+        let streak = 0, maxStreak = 0;
+        let lastSignalBar = -100;
+        let openTrade = null;
+
+        for (let i = 35; i < candles.length; i++) {
+          const c = candles[i];
+          if (openTrade) {
+            const isLong = openTrade.dir === 'LONG';
+            const hitSL = isLong ? c.l <= openTrade.sl : c.h >= openTrade.sl;
+            const hitTP1 = isLong ? c.h >= openTrade.tp1 : c.l <= openTrade.tp1;
+            const hitTP2 = isLong ? c.h >= openTrade.tp2 : c.l <= openTrade.tp2;
+            const hitTP3 = isLong ? c.h >= openTrade.tp3 : c.l <= openTrade.tp3;
+            const hitTP4 = isLong ? c.h >= openTrade.tp4 : c.l <= openTrade.tp4;
+
+            if (hitSL) {
+              if (openTrade.tp1) wins++; else { losses++; streak++; maxStreak = Math.max(maxStreak, streak); }
+              openTrade = null;
+            } else {
+              if (hitTP1 && !openTrade.tp1) { openTrade.tp1 = true; tp1++; }
+              if (hitTP2 && !openTrade.tp2) { openTrade.tp2 = true; tp2++; }
+              if (hitTP3 && !openTrade.tp3) { openTrade.tp3 = true; tp3++; }
+              if (hitTP4 && !openTrade.tp4) {
+                openTrade.tp4 = true; tp4++; wins++; streak = 0;
+                openTrade = null;
+              }
+            }
+          }
+
+          if (!openTrade && (i - lastSignalBar) >= 3) {
+            const sig = evaluateSignalClient(candles, ind, i, trendMode, requireCandle, requireWeekly);
+            if (sig) {
+              lastSignalBar = i;
+              const entry = c.c;
+              const atr = ind[i].atr || (entry * 0.01);
+              const slDist = atr * slMult;
+              const tpDist = slDist * tpRatio;
+
+              openTrade = {
+                dir: sig.direction,
+                sl: sig.direction === 'LONG' ? entry - slDist : entry + slDist,
+                tp1: sig.direction === 'LONG' ? entry + tpDist : entry - tpDist,
+                tp2: sig.direction === 'LONG' ? entry + tpDist * 2 : entry - tpDist * 2,
+                tp3: sig.direction === 'LONG' ? entry + tpDist * 3 : entry - tpDist * 3,
+                tp4: sig.direction === 'LONG' ? entry + tpDist * 4 : entry - tpDist * 4,
+                tp1_hit: false
+              };
+            }
+          }
         }
-        $('tickers').innerHTML = h;
-      } catch (e) {}
+
+        const closed = wins + losses;
+        const wr = closed > 0 ? ((wins / closed) * 100).toFixed(1) : '0.0';
+        renderBacktestResult({
+          symbol: pair, timeframe: tf,
+          bars_tested: candles.length, closed_trades: closed,
+          wins, losses, win_rate: wr,
+          tp1_hits: tp1, tp2_hits: tp2, tp3_hits: tp3, tp4_hits: tp4,
+          max_loss_streak: maxStreak
+        }, statusEl);
+
+      } catch (err) {
+        statusEl.innerHTML = `<span style="color:var(--r)">Back-test error: ${err.message}</span>`;
+      }
+    }
+
+    function renderBacktestResult(d, el) {
+      el.innerHTML = `
+        <b>${d.symbol} · ${d.timeframe} Back-Test Results:</b><br>
+        Bars tested: <b>${d.bars_tested}</b> · Resolved trades: <b>${d.closed_trades}</b><br>
+        Wins: <span class="call">${d.wins}</span> · Losses: <span class="put">${d.losses}</span> · Win Rate: <b>${d.win_rate}%</b><br>
+        TP hits: TP1: ${d.tp1_hits} | TP2: ${d.tp2_hits} | TP3: ${d.tp3_hits} | TP4: ${d.tp4_hits || 0}<br>
+        Max Loss Streak: <b>${d.max_loss_streak}</b>
+      `;
     }
 
     // ==========================================
@@ -566,14 +1036,28 @@
     // ==========================================
     window.addEventListener('DOMContentLoaded', () => {
       $('apiBaseInput').value = API_BASE;
-      syncSystemStatus();
-      pollTimer = setInterval(syncSystemStatus, 8000);
+      $('soundBtn').textContent = soundEnabled ? '🔔 Sound: ON' : '🔕 Sound: OFF';
+      
+      // Render initial local history immediately
+      renderSignalTable(localSignals);
+      updateClientStats();
 
-      // Local clock
+      // Check backend status or launch autonomous in-browser engine
+      syncSystemStatus();
+      setInterval(syncSystemStatus, 10000);
+
+      // Local clock & Progress Bar
       setInterval(() => {
         const t = tz();
         $('clock').textContent = tm(t);
         $('date').textContent = dt(t) + ' · UTC+06:00';
+
+        if (nextScanTimestamp && isRunning) {
+          const totalDuration = (parseInt($('interval').value) || 30) * 1000;
+          const remaining = Math.max(0, nextScanTimestamp - Date.now());
+          const pct = Math.min(100, Math.max(0, (1 - remaining / totalDuration) * 100));
+          $('bar').style.width = pct + '%';
+        }
       }, 250);
     });
   </script>
