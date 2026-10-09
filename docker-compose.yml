@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  binance-scanner:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: binance_futures_scanner
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID:-}
+      - TELEGRAM_ENABLED=${TELEGRAM_ENABLED:-true}
+      - BINANCE_TIMEFRAME=${BINANCE_TIMEFRAME:-5m}
+      - SCAN_INTERVAL_SECONDS=${SCAN_INTERVAL_SECONDS:-30}
+      - SL_ATR_MULT=${SL_ATR_MULT:-2.5}
+      - TP1_RATIO=${TP1_RATIO:-1.5}
+      - TREND_FILTER=${TREND_FILTER:-zone}
+      - DATABASE_PATH=/app/data/signals.db
+    volumes:
+      - scanner-data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  scanner-data:
+    driver: local

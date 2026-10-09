@@ -1,0 +1,616 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>EMA VWAP 24/7 Signal Generator — Binance Perpetual Futures</title>
+  <style>
+    :root {
+      --bg: #0b0e14;
+      --p: #12161f;
+      --p2: #171c28;
+      --b: #273149;
+      --t: #e6e9f0;
+      --d: #8b93a7;
+      --g: #00e676;
+      --r: #ff1744;
+      --a: #22d3ee;
+      --y: #ffb300;
+      --p-accent: #8b5cf6;
+    }
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; }
+    body { margin: 0; padding: 14px; background: var(--bg); color: var(--t); font-size: 13px; }
+    header, .card, .ticker { background: var(--p); border: 1px solid var(--b); border-radius: 12px; }
+    header { padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; gap: 14px; margin-bottom: 14px; flex-wrap: wrap; }
+    h1 { font-size: 18px; margin: 0; font-weight: 700; }
+    h1 span { color: var(--a); }
+    h2 { font-size: 12px; color: var(--d); text-transform: uppercase; letter-spacing: 1px; margin: 0 0 10px; font-weight: 700; }
+    .sub, .status { font-size: 11px; color: var(--d); line-height: 1.5; }
+    .clock { font-size: 24px; color: var(--a); font-weight: 700; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; text-align: right; }
+    .grid { display: grid; grid-template-columns: 360px 1fr; gap: 14px; }
+    @media (max-width: 1024px) { .grid { grid-template-columns: 1fr; } }
+    .card { padding: 14px; margin-bottom: 14px; }
+    label { display: block; color: var(--d); font-size: 11px; margin: 8px 0 3px; font-weight: 600; text-transform: uppercase; }
+    select, input { width: 100%; padding: 8px 10px; background: var(--p2); border: 1px solid var(--b); border-radius: 8px; color: var(--t); font-size: 12px; outline: none; }
+    select:focus, input:focus { border-color: var(--a); }
+    .row { display: flex; gap: 8px; }
+    .row > div { flex: 1; }
+    .chip { padding: 6px 10px; border: 1px solid var(--b); border-radius: 8px; background: var(--p2); font-size: 11px; cursor: pointer; text-align: center; }
+    .chip.on { border-color: var(--a); color: var(--a); font-weight: 700; }
+    button { cursor: pointer; border: 0; border-radius: 8px; padding: 9px 12px; font-weight: 700; font-size: 12px; transition: opacity 0.2s; }
+    button:hover { opacity: 0.9; }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+    .start { width: 100%; margin-top: 10px; background: var(--g); color: #00130a; }
+    .stop { background: var(--r); color: #fff; }
+    .action { background: var(--a); color: #001018; margin-top: 8px; width: 100%; }
+    .action-sub { background: var(--p2); color: var(--t); border: 1px solid var(--b); margin-top: 6px; width: 100%; }
+    .warn { padding: 10px 14px; border: 1px solid #765b1c; background: #241d0b; color: #ffd369; border-radius: 10px; font-size: 11px; line-height: 1.5; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+    #tickers { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-bottom: 14px; }
+    .ticker { padding: 9px 12px; font-size: 12px; }
+    .ticker b { display: block; font-size: 11px; }
+    .price { color: var(--a); font-family: ui-monospace, monospace; font-weight: 600; }
+    .up { color: var(--g); font-weight: 600; }
+    .dn { color: var(--r); font-weight: 600; }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px; }
+    .stat { background: var(--p2); border: 1px solid var(--b); border-radius: 8px; text-align: center; padding: 10px 6px; }
+    .stat b { font-size: 18px; display: block; font-family: ui-monospace, monospace; }
+    .stat small { font-size: 10px; color: var(--d); text-transform: uppercase; }
+    .log { overflow-x: auto; max-height: 520px; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th, td { padding: 8px 10px; border-bottom: 1px solid #1a2233; text-align: left; white-space: nowrap; }
+    th { color: var(--d); font-size: 11px; font-weight: 600; text-transform: uppercase; }
+    .call { color: var(--g); font-weight: 700; }
+    .put { color: var(--r); font-weight: 700; }
+    .open { color: var(--y); font-weight: 600; }
+    .hit { color: var(--a); font-weight: 700; }
+    .next { height: 4px; background: var(--p2); margin-top: 8px; border-radius: 4px; overflow: hidden; }
+    .next i { display: block; background: var(--a); height: 100%; width: 0%; transition: width 0.25s linear; }
+    .small { font-size: 11px; color: var(--d); line-height: 1.45; margin-top: 6px; }
+    .badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; }
+    .badge-online { background: rgba(0, 230, 118, 0.15); color: var(--g); border: 1px solid rgba(0, 230, 118, 0.3); }
+    .badge-offline { background: rgba(255, 23, 68, 0.15); color: var(--r); border: 1px solid rgba(255, 23, 68, 0.3); }
+    .badge-tg { background: rgba(34, 211, 238, 0.15); color: var(--a); border: 1px solid rgba(34, 211, 238, 0.3); }
+    .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .tg-box { background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 8px; padding: 10px; margin-top: 10px; }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <div>
+      <h1>EMA VWAP <span>· 24/7 Binance Futures Scanner</span></h1>
+      <div class="sub">
+        EMA 11/34 crossover · VWAP vs EMA 200 zone · confirmed bar close · ATR TP/SL · Python 24/7 Engine
+      </div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+      <a href="/static/binance-scanner-247-telegram.zip" download="binance-scanner-247-telegram.zip" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; background: #238636; color: #ffffff; font-weight: 700; font-size: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); box-shadow: 0 2px 4px rgba(0,0,0,0.3); transition: background 0.2s;" onmouseover="this.style.background='#2ea043'" onmouseout="this.style.background='#238636'">
+        <span>📦</span> Download GitHub Repo (.zip)
+      </a>
+      <div style="text-align: right;">
+        <div class="clock" id="clock">--:--:--</div>
+        <div class="sub" id="date">UTC+06:00</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- SYSTEM & SERVICE STATUS BANNER -->
+  <div class="warn">
+    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+      <span id="backendBadge" class="badge badge-online">
+        <span class="dot"></span> <span id="backendText">Connecting to Python Service...</span>
+      </span>
+      <span id="tgBadge" class="badge badge-tg">
+        <span class="dot"></span> <span id="tgText">Telegram: Active</span>
+      </span>
+      <span class="sub" id="uptimeText">Uptime: --</span>
+    </div>
+    <div style="display: flex; gap: 6px; align-items: center;">
+      <span class="sub">Backend URL:</span>
+      <input id="apiBaseInput" value="" placeholder="Auto (Relative /api)" style="width: 170px; padding: 4px 6px; font-size: 11px;">
+      <button onclick="reconnectApi()" style="padding: 4px 8px; font-size: 11px; background: var(--b); color: var(--t);">Save</button>
+    </div>
+  </div>
+
+  <!-- TRENDING TICKERS GRID -->
+  <div id="tickers"></div>
+
+  <!-- WORKSPACE GRID -->
+  <div class="grid">
+    
+    <!-- LEFT SIDEBAR: CONTROLS & PARAMS -->
+    <aside>
+      
+      <!-- SCANNER CONFIG CARD -->
+      <div class="card">
+        <h2>Live Session Settings</h2>
+        
+        <label>Binance Timeframe</label>
+        <select id="tf" onchange="applySettings()">
+          <option value="1m">1 minute</option>
+          <option value="3m">3 minutes</option>
+          <option value="5m" selected>5 minutes</option>
+          <option value="15m">15 minutes</option>
+          <option value="30m">30 minutes</option>
+          <option value="1h">1 hour</option>
+          <option value="4h">4 hours</option>
+          <option value="1d">1 day</option>
+        </select>
+
+        <label>Trend Filter</label>
+        <select id="trend" onchange="applySettings()">
+          <option value="zone" selected>VWAP vs EMA 200 zone</option>
+          <option value="price">Price above/below VWAP & EMA 200</option>
+          <option value="none">None (Pure EMA Crossover)</option>
+        </select>
+
+        <label>Require Confirming Candle Color</label>
+        <select id="candle" onchange="applySettings()">
+          <option value="true" selected>Yes (Green for Long, Red for Short)</option>
+          <option value="false">No</option>
+        </select>
+
+        <label>Weekly VWAP Alignment</label>
+        <select id="weekly" onchange="applySettings()">
+          <option value="false" selected>No</option>
+          <option value="true">Yes</option>
+        </select>
+
+        <div class="row">
+          <div>
+            <label>ATR Period</label>
+            <input id="atr" type="number" value="14" min="1" onchange="applySettings()">
+          </div>
+          <div>
+            <label>SL × ATR</label>
+            <input id="sl" type="number" value="2.5" step="0.1" min="0.1" onchange="applySettings()">
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>TP1 × SL (RRR)</label>
+            <input id="tp" type="number" value="1.5" step="0.1" min="0.1" onchange="applySettings()">
+          </div>
+          <div>
+            <label>Scan Interval (sec)</label>
+            <input id="interval" type="number" value="30" min="5" max="300" onchange="applySettings()">
+          </div>
+        </div>
+      </div>
+
+      <!-- SCANNER CONTROLS & TELEGRAM -->
+      <div class="card">
+        <h2>Engine & Telegram Controls</h2>
+        
+        <button class="start" id="startBtn" onclick="toggleScannerEngine()">
+          ▶ RESUME 24/7 SCANNER
+        </button>
+        <button class="action-sub" onclick="triggerManualScan()">
+          ⚡ Force Immediate Scan Cycle
+        </button>
+
+        <!-- Telegram Test & Alert Settings -->
+        <div class="tg-box">
+          <div style="font-weight: 700; color: var(--a); margin-bottom: 4px; display: flex; justify-content: space-between;">
+            <span>Telegram Bot Alerts</span>
+            <span id="tgStatusMini" style="font-size: 10px; color: var(--g);">CONFIGURED</span>
+          </div>
+          <div class="small">
+            Auto-dispatches formatted alerts (Pair, Direction, Entry, SL, TP1-TP3, RRR) with anti-spam cooldown.
+          </div>
+          <button class="action" onclick="sendTelegramTestAlert()" style="font-size: 11px; padding: 6px 10px;">
+            📨 Send Test Notification to Telegram
+          </button>
+        </div>
+
+        <div class="status" id="status" style="margin-top: 10px;">Connecting to scanner service...</div>
+        <div class="next"><i id="bar"></i></div>
+      </div>
+
+      <!-- HISTORICAL BACK-TEST -->
+      <div class="card">
+        <h2>Historical Back-Test</h2>
+        <label>Pair</label>
+        <select id="btPair">
+          <option value="BTCUSDT">BTCUSDT</option>
+          <option value="ETHUSDT">ETHUSDT</option>
+          <option value="BNBUSDT">BNBUSDT</option>
+          <option value="SOLUSDT">SOLUSDT</option>
+          <option value="XRPUSDT">XRPUSDT</option>
+          <option value="DOGEUSDT">DOGEUSDT</option>
+          <option value="ADAUSDT">ADAUSDT</option>
+          <option value="AVAXUSDT">AVAXUSDT</option>
+        </select>
+
+        <label>Back-test Timeframe</label>
+        <select id="btTf">
+          <option value="1m">1 minute</option>
+          <option value="3m">3 minutes</option>
+          <option value="5m" selected>5 minutes</option>
+          <option value="15m">15 minutes</option>
+          <option value="1h">1 hour</option>
+        </select>
+
+        <label>Historical Bars</label>
+        <input id="btBars" type="number" value="500" min="250" max="1000">
+
+        <button class="action" id="btRun" onclick="runBacktest()">Run Historical Back-Test</button>
+        <div class="small">Simulates complete bar entries, SL, and TP1-TP4 targets over Binance historical klines.</div>
+        <div class="status" id="btStatus" style="margin-top: 8px;">No back-test run yet.</div>
+      </div>
+
+    </aside>
+
+    <!-- RIGHT MAIN: METRICS & SIGNALS FEED -->
+    <main>
+      
+      <!-- STATS SUMMARY -->
+      <div class="card">
+        <h2>Performance Dashboard & Trend Watch</h2>
+        <div class="stats" id="stats">
+          <div class="stat"><b>0</b><small>Signals</small></div>
+          <div class="stat"><b>0</b><small>Wins</small></div>
+          <div class="stat"><b>0</b><small>Losses</small></div>
+          <div class="stat"><b>0%</b><small>Win Rate</small></div>
+          <div class="stat"><b>0</b><small>TP1 Hits</small></div>
+          <div class="stat"><b>0</b><small>TP2 Hits</small></div>
+          <div class="stat"><b>0</b><small>TP3 Hits</small></div>
+          <div class="stat"><b>0</b><small>Open</small></div>
+        </div>
+        <div class="status" id="trendList" style="margin-top: 10px;">Trending pairs: loading...</div>
+        <div class="status" id="verdict">EMA 11/34 crossover · VWAP vs EMA 200 · ATR(14) SL 2.5× · TP1 1.5R</div>
+      </div>
+
+      <!-- LIVE SIGNALS LOG TABLE -->
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <h2>Live Persistent Signal Feed (SQLite signals.db)</h2>
+          <span class="sub" id="signalCountText">0 signals recorded</span>
+        </div>
+        <div class="log">
+          <table>
+            <thead>
+              <tr>
+                <th>Time (UTC)</th>
+                <th>Pair</th>
+                <th>Dir</th>
+                <th>TF</th>
+                <th>Entry</th>
+                <th>Stop Loss</th>
+                <th>Take Profit 1</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="feed">
+              <tr><td colspan="8" style="text-align: center; color: var(--d); padding: 20px;">Scanning Binance Perpetual Futures... Signals will appear here in real-time.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+
+  </div>
+
+  <!-- JAVASCRIPT APPLICATION LOGIC -->
+  <script>
+    const $ = id => document.getElementById(id);
+    const OFF = 360; // UTC+06:00 offset in minutes
+
+    // Configuration & State
+    let API_BASE = localStorage.getItem('binance_scanner_api_base') || '';
+    let isConnectedToBackend = false;
+    let pollTimer = null;
+    let isRunning = false;
+
+    // Standalone fallback cache for direct Binance scanning if backend is offline
+    const clientState = {
+      pairs: ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT', 'DOGEUSDT', 'ADAUSDT', 'AVAXUSDT'],
+      signals: [],
+      stats: { total: 0, wins: 0, losses: 0, tp1: 0, tp2: 0, tp3: 0, open: 0 },
+      tickers: {}
+    };
+
+    function tz() { return new Date(Date.now() + OFF * 60000); }
+    function tm(d) { return d.toISOString().slice(11, 19); }
+    function dt(d) { return d.toISOString().slice(0, 10); }
+    function fmt(n) { return Number.isFinite(n) ? (Math.abs(n) < 1 ? n.toFixed(6) : n.toFixed(2)) : '—'; }
+
+    function getApiUrl(endpoint) {
+      if (!API_BASE) return endpoint;
+      return API_BASE.replace(/\/+$/, '') + endpoint;
+    }
+
+    function reconnectApi() {
+      const val = $('apiBaseInput').value.trim();
+      API_BASE = val;
+      localStorage.setItem('binance_scanner_api_base', val);
+      syncSystemStatus();
+    }
+
+    // ==========================================
+    // BACKEND API SYNC
+    // ==========================================
+    async function syncSystemStatus() {
+      try {
+        const res = await fetch(getApiUrl('/api/status'), { cache: 'no-store' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        
+        isConnectedToBackend = true;
+        $('backendBadge').className = 'badge badge-online';
+        $('backendText').textContent = 'Python 24/7 Engine Active';
+        $('uptimeText').textContent = `Uptime: ${data.uptime}`;
+
+        // Sync Running Button
+        isRunning = data.scanner_running;
+        const btn = $('startBtn');
+        if (isRunning) {
+          btn.textContent = '■ PAUSE 24/7 SCANNER';
+          btn.className = 'start stop';
+        } else {
+          btn.textContent = '▶ RESUME 24/7 SCANNER';
+          btn.className = 'start';
+        }
+
+        // Sync Status Message
+        $('status').innerHTML = `<b>Status:</b> ${data.scan_progress}<br>Scanned: <b>${data.symbols_tracked}</b> active Binance futures symbols on <b>${data.timeframe}</b>`;
+        
+        // Sync Telegram status
+        $('tgText').textContent = data.telegram_configured ? 'Telegram: Active' : 'Telegram: Token Needed';
+        $('tgStatusMini').textContent = data.telegram_configured ? 'CONFIGURED' : 'UNCONFIGURED';
+
+        // Render Stats
+        if (data.stats) {
+          renderStats(data.stats);
+        }
+
+        // Fetch Recent Signals & Tickers
+        await Promise.all([syncSignals(), syncTickers()]);
+
+      } catch (err) {
+        // Fallback to standalone mode
+        isConnectedToBackend = false;
+        $('backendBadge').className = 'badge badge-offline';
+        $('backendText').textContent = 'Backend Offline (Direct Mode)';
+        $('status').innerHTML = `Standalone mode active. Enter your Render URL above (e.g. <code>https://your-app.onrender.com</code>) or run the Python backend.`;
+        fallbackDirectScan();
+      }
+    }
+
+    async function syncSignals() {
+      try {
+        const res = await fetch(getApiUrl('/api/signals?limit=50'));
+        if (!res.ok) return;
+        const data = await res.json();
+        renderSignalTable(data.signals || []);
+      } catch (e) {}
+    }
+
+    async function syncTickers() {
+      try {
+        const res = await fetch(getApiUrl('/api/tickers'));
+        if (!res.ok) return;
+        const data = await res.json();
+        
+        // Trending
+        const trending = data.trending || [];
+        $('trendList').innerHTML = '<b>Trending pairs:</b> ' + (trending.length ? trending.slice(0, 15).join(' · ') : 'scanning...');
+
+        // Tickers Grid
+        let h = '';
+        const tickers = data.tickers || [];
+        for (const t of tickers.slice(0, 8)) {
+          const ch = t.change_pct || 0;
+          h += `
+            <div class="ticker">
+              <b>${t.symbol} <span class="${t.trend === 'UP' ? 'up' : 'dn'}">${t.trend}</span></b>
+              <span class="price">${fmt(t.price)}</span><br>
+              <span class="${ch >= 0 ? 'up' : 'dn'}">${ch >= 0 ? '▲' : '▼'} ${Math.abs(ch).toFixed(2)}%</span>
+            </div>
+          `;
+        }
+        if (h) $('tickers').innerHTML = h;
+      } catch (e) {}
+    }
+
+    function renderStats(st) {
+      const wins = st.wins || 0;
+      const losses = st.losses || 0;
+      const total = st.total_signals || 0;
+      const wr = st.win_rate !== undefined ? st.win_rate : (total ? (wins / (wins + losses || 1) * 100).toFixed(1) : 0);
+      
+      $('stats').innerHTML = `
+        <div class="stat"><b>${total}</b><small>Signals</small></div>
+        <div class="stat"><b style="color:var(--g)">${wins}</b><small>Wins</small></div>
+        <div class="stat"><b style="color:var(--r)">${losses}</b><small>Losses</small></div>
+        <div class="stat"><b style="color:var(--a)">${wr}%</b><small>Win Rate</small></div>
+        <div class="stat"><b>${st.tp1_hits || 0}</b><small>TP1 Hits</small></div>
+        <div class="stat"><b>${st.tp2_hits || 0}</b><small>TP2 Hits</small></div>
+        <div class="stat"><b>${st.tp3_hits || 0}</b><small>TP3 Hits</small></div>
+        <div class="stat"><b style="color:var(--y)">${st.open_signals || 0}</b><small>Open</small></div>
+      `;
+    }
+
+    function renderSignalTable(signals) {
+      $('signalCountText').textContent = `${signals.length} signals logged`;
+      if (!signals.length) {
+        $('feed').innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--d); padding: 20px;">No signals recorded yet. The engine scans 24/7 and records triggers here.</td></tr>';
+        return;
+      }
+
+      let h = '';
+      for (const s of signals) {
+        const isLong = s.direction === 'LONG' || s.direction === 'CALL';
+        const statusClass = s.status === 'OPEN' ? 'open' : (s.status.includes('TP') ? 'hit' : 'dn');
+        const timeStr = s.created_at ? s.created_at.slice(0, 19).replace('T', ' ') : '--';
+
+        h += `
+          <tr>
+            <td><code>${timeStr}</code></td>
+            <td><b>${s.symbol}</b></td>
+            <td class="${isLong ? 'call' : 'put'}">${s.direction}</td>
+            <td><span style="font-size: 10px; color: var(--a);">${s.timeframe || '5m'}</span></td>
+            <td><code>${fmt(s.entry_price)}</code></td>
+            <td style="color: var(--r);"><code>${fmt(s.sl_price)}</code></td>
+            <td style="color: var(--g);"><code>${fmt(s.tp1_price)}</code></td>
+            <td class="${statusClass}"><b>${s.status}</b></td>
+          </tr>
+        `;
+      }
+      $('feed').innerHTML = h;
+    }
+
+    // ==========================================
+    // USER ACTIONS
+    // ==========================================
+    async function toggleScannerEngine() {
+      if (!isConnectedToBackend) {
+        alert("Connecting to backend... If you are hosting on Render, paste your Render service URL in the 'Backend URL' box at the top.");
+        return;
+      }
+      try {
+        const res = await fetch(getApiUrl('/api/scan/toggle'), { method: 'POST' });
+        const data = await res.json();
+        syncSystemStatus();
+      } catch (e) {
+        alert("Failed to toggle scanner: " + e.message);
+      }
+    }
+
+    async function triggerManualScan() {
+      try {
+        const res = await fetch(getApiUrl('/api/scan/trigger'), { method: 'POST' });
+        const data = await res.json();
+        $('status').innerHTML = `<b>Manual Scan Triggered:</b> ${data.message}`;
+      } catch (e) {
+        alert("Failed to trigger scan: " + e.message);
+      }
+    }
+
+    async function sendTelegramTestAlert() {
+      try {
+        const res = await fetch(getApiUrl('/api/telegram/test'), { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          alert("✅ Test signal successfully dispatched to Telegram!");
+        } else {
+          alert("Telegram notice: " + (data.detail || data.message));
+        }
+      } catch (e) {
+        alert("Telegram dispatch error: " + e.message + "\nEnsure TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID are set in .env");
+      }
+    }
+
+    async function applySettings() {
+      if (!isConnectedToBackend) return;
+      const payload = {
+        timeframe: $('tf').value,
+        trend_filter: $('trend').value,
+        require_candle_color: $('candle').value === 'true',
+        require_weekly_vwap: $('weekly').value === 'true',
+        atr_period: parseInt($('atr').value) || 14,
+        sl_atr_mult: parseFloat($('sl').value) || 2.5,
+        tp1_ratio: parseFloat($('tp').value) || 1.5,
+        scan_interval_seconds: parseInt($('interval').value) || 30
+      };
+
+      try {
+        await fetch(getApiUrl('/api/settings'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      } catch (e) {}
+    }
+
+    async function runBacktest() {
+      const pair = $('btPair').value;
+      const tf = $('btTf').value;
+      const bars = parseInt($('btBars').value) || 500;
+      const statusEl = $('btStatus');
+      const btn = $('btRun');
+
+      btn.disabled = true;
+      statusEl.textContent = `Running back-test for ${pair} (${tf}, ${bars} bars)...`;
+
+      try {
+        const res = await fetch(getApiUrl('/api/backtest'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            symbol: pair,
+            timeframe: tf,
+            bars: bars,
+            trend_filter: $('trend').value,
+            require_candle_color: $('candle').value === 'true',
+            require_weekly_vwap: $('weekly').value === 'true',
+            atr_period: parseInt($('atr').value) || 14,
+            sl_atr_mult: parseFloat($('sl').value) || 2.5,
+            tp1_ratio: parseFloat($('tp').value) || 1.5
+          })
+        });
+
+        if (!res.ok) throw new Error(await res.text());
+        const d = await res.json();
+        
+        statusEl.innerHTML = `
+          <b>${d.symbol} · ${d.timeframe} Back-Test Results:</b><br>
+          Bars tested: <b>${d.bars_tested}</b> · Resolved trades: <b>${d.closed_trades}</b><br>
+          Wins: <span class="call">${d.wins}</span> · Losses: <span class="put">${d.losses}</span> · Win Rate: <b>${d.win_rate}%</b><br>
+          TP hits: TP1: ${d.tp1_hits} | TP2: ${d.tp2_hits} | TP3: ${d.tp3_hits} | TP4: ${d.tp4_hits}<br>
+          Max Loss Streak: <b>${d.max_loss_streak}</b>
+        `;
+      } catch (err) {
+        statusEl.innerHTML = `<span style="color:var(--r)">Back-test error: ${err.message}</span>`;
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    // ==========================================
+    // STANDALONE DIRECT FALLBACK SCANNER
+    // ==========================================
+    async function fallbackDirectScan() {
+      // Direct client scan to populate UI if backend server is not connected yet
+      try {
+        const resp = await fetch('https://fapi.binance.com/fapi/v1/ticker/24hr');
+        if (!resp.ok) return;
+        const tickers = await resp.json();
+        const usdtPairs = tickers.filter(t => t.symbol.endsWith('USDT')).slice(0, 8);
+        
+        let h = '';
+        for (const t of usdtPairs) {
+          const ch = parseFloat(t.priceChangePercent);
+          h += `
+            <div class="ticker">
+              <b>${t.symbol} <span class="call">BINANCE</span></b>
+              <span class="price">${fmt(parseFloat(t.lastPrice))}</span><br>
+              <span class="${ch >= 0 ? 'up' : 'dn'}">${ch >= 0 ? '▲' : '▼'} ${Math.abs(ch).toFixed(2)}%</span>
+            </div>
+          `;
+        }
+        $('tickers').innerHTML = h;
+      } catch (e) {}
+    }
+
+    // ==========================================
+    // INIT & TICKER TIMERS
+    // ==========================================
+    window.addEventListener('DOMContentLoaded', () => {
+      $('apiBaseInput').value = API_BASE;
+      syncSystemStatus();
+      pollTimer = setInterval(syncSystemStatus, 8000);
+
+      // Local clock
+      setInterval(() => {
+        const t = tz();
+        $('clock').textContent = tm(t);
+        $('date').textContent = dt(t) + ' · UTC+06:00';
+      }, 250);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+services:
+  - type: web
+    name: binance-futures-scanner
+    env: python
+    plan: starter
+    region: frankfurt # Low latency to Binance servers
+    buildCommand: "pip install -r backend/requirements.txt"
+    startCommand: "python -m uvicorn backend.main:app --host 0.0.0.0 --port $PORT"
+    healthCheckPath: /api/status
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.12
+      - key: BINANCE_TIMEFRAME
+        value: 5m
+      - key: SCAN_INTERVAL_SECONDS
+        value: 30
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_CHAT_ID
+        sync: false
+      - key: TELEGRAM_ENABLED
+        value: true
+      - key: TELEGRAM_COOLDOWN_MINUTES
+        value: 15
+      - key: TREND_FILTER
+        value: zone
+      - key: REQUIRE_CANDLE_COLOR
+        value: true
+      - key: REQUIRE_WEEKLY_VWAP
+        value: false
+      - key: ATR_PERIOD
+        value: 14
+      - key: SL_ATR_MULT
+        value: 2.5
+      - key: TP1_RATIO
+        value: 1.5
+      - key: DATABASE_PATH
+        value: signals.db
+    disk:
+      name: scanner-data
+      mountPath: /app/data
+      sizeGB: 1

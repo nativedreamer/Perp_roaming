@@ -1,0 +1,6 @@
+{
+  "name": "DegenTrench - Memecoin Radar & Crawler",
+  "description": "High-speed memecoin audit, live web crawler, bonding curve radar, and risk intelligence terminal for crypto trench trading.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
