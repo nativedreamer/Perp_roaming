@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     HOST: str = "0.0.0.0"
     PORT: int = int(os.getenv("PORT", "8000"))
     DEBUG: bool = os.getenv("DEBUG", "false").lower() == "true"
+    APP_TIMEZONE: str = os.getenv("APP_TIMEZONE", "Africa/Lagos")
 
     # Binance Perpetuals Settings
     BINANCE_FUTURES_BASE_URL: str = "https://fapi.binance.com"

@@ -4,6 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, viewport-fit=cover">
   <title>PERP ROAMING — 24/7 Binance Futures EMA/VWAP Algo Radar</title>
+  <meta name="theme-color" content="#080b11">
+  <meta name="application-name" content="PERP ROAMING">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="192x192" href="/static/icons/icon-192.png">
   <style>
     :root {
       --bg-dark: #080b11;
@@ -1017,12 +1021,16 @@
           <span id="soundIcon">🔔</span> SOUND
         </button>
 
+        <button id="installPwaBtn" class="btn-terminal active-cyan" onclick="installPwa()" style="display:none;">
+          ⇩ INSTALL APP
+        </button>
+
         <button class="btn-terminal" onclick="triggerImmediateSweep()">
           <span>⚡</span> SWEEP
         </button>
 
         <div class="clock-display">
-          <div id="masterClock">--:--:-- UTC</div>
+          <div id="masterClock">--:--:-- WAT</div>
           <small id="masterDate">CONNECTING...</small>
         </div>
       </div>
@@ -1399,7 +1407,7 @@
             </div>
             <div id="btSummaryNarrative" style="font-size:10.5px; color:var(--text-muted); margin-top:8px; line-height:1.4;"></div>
             <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; gap:8px;">
-              <span style="font-size:10px; color:var(--text-muted);">Simulation activity · grouped by UTC day</span>
+              <span style="font-size:10px; color:var(--text-muted);">Simulation activity · grouped by Africa/Lagos day</span>
               <button class="btn-terminal" style="padding:5px 8px;" onclick="downloadSimulationCsv()">⇩ Download CSV</button>
             </div>
             <div id="simulationActivityContainer" style="margin-top:6px; max-height:300px; overflow:auto;"></div>
@@ -1465,7 +1473,7 @@
           <table class="signals-table">
             <thead>
               <tr>
-                <th>Time (UTC)</th>
+                <th>Time (WAT)</th>
                 <th>Pair</th>
                 <th>Direction</th>
                 <th>Strength Score</th>
@@ -3006,7 +3014,7 @@
         }
         const pnlClass = pnlPct >= 0 ? 'color:var(--accent-green);' : 'color:var(--accent-red);';
 
-        const timeStr = s.createdAt ? s.createdAt.slice(11, 19) : '--:--:--';
+        const timeStr = s.createdAt ? new Intl.DateTimeFormat('en-NG', { timeZone: 'Africa/Lagos', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(new Date(s.createdAt)) : '--:--:--';
         const binanceUrl = `https://www.binance.com/en/futures/${s.symbol}`;
 
         // Table Row HTML
@@ -3222,7 +3230,7 @@
       }
       const groups = {};
       trades.slice().reverse().forEach(t => {
-        const day = new Date(t.exitTime || t.entryTime).toISOString().slice(0, 10);
+        const day = new Intl.DateTimeFormat('en-NG', { timeZone: 'Africa/Lagos', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(t.exitTime || t.entryTime));
         (groups[day] ||= []).push(t);
       });
       container.innerHTML = Object.entries(groups).map(([day, dayTrades]) => `
@@ -3385,9 +3393,10 @@
         alert('No signals recorded yet to export.');
         return;
       }
-      let csv = 'Timestamp_UTC,Symbol,Direction,Timeframe,Strength_Score,Entry_Price,Current_Price,Stop_Loss,Take_Profit_1,Take_Profit_2,Status\n';
+      let csv = 'Timestamp_Africa_Lagos,Symbol,Direction,Timeframe,Strength_Score,Entry_Price,Current_Price,Stop_Loss,Take_Profit_1,Take_Profit_2,Status\n';
       localSignals.forEach(s => {
-        csv += `${s.createdAt},${s.symbol},${s.direction},${s.timeframe},${s.strengthScore || 75},${s.entryPrice},${s.currentPrice || s.entryPrice},${s.slPrice},${s.tp1Price},${s.tp2Price},${s.status}\n`;
+        const created = s.createdAt ? new Intl.DateTimeFormat('en-NG', { timeZone: 'Africa/Lagos', dateStyle: 'short', timeStyle: 'medium' }).format(new Date(s.createdAt)) : '';
+        csv += `${created},${s.symbol},${s.direction},${s.timeframe},${s.strengthScore || 75},${s.entryPrice},${s.currentPrice || s.entryPrice},${s.slPrice},${s.tp1Price},${s.tp2Price},${s.status}\n`;
       });
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
@@ -3414,11 +3423,10 @@
     // ==========================================
     function updateClock() {
       const now = new Date();
-      const h = String(now.getUTCHours()).padStart(2, '0');
-      const m = String(now.getUTCMinutes()).padStart(2, '0');
-      const s = String(now.getUTCSeconds()).padStart(2, '0');
-      $('masterClock').textContent = `${h}:${m}:${s} UTC`;
-      $('masterDate').textContent = now.toUTCString().slice(0, 16).toUpperCase();
+      const parts = new Intl.DateTimeFormat('en-NG', { timeZone: 'Africa/Lagos', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).formatToParts(now);
+      const part = (name) => parts.find((item) => item.type === name)?.value || '00';
+      $('masterClock').textContent = `${part('hour')}:${part('minute')}:${part('second')} WAT`;
+      $('masterDate').textContent = new Intl.DateTimeFormat('en-NG', { timeZone: 'Africa/Lagos', weekday: 'short', year: 'numeric', month: 'short', day: '2-digit' }).format(now).toUpperCase();
     }
 
     function restoreLastSimulation() {
@@ -3429,11 +3437,30 @@
         $('btResultContainer').style.display = 'block';
         renderSimulationActivity(saved.trades);
         if (typeof saved.equity === 'number') $('btFinalEquity').textContent = `$${saved.equity.toFixed(2)}`;
-        $('btSummaryNarrative').textContent = `Restored ${saved.trades.length} persisted simulation trades from ${new Date(saved.savedAt || Date.now()).toUTCString()}. Run again to refresh. `;
+        $('btSummaryNarrative').textContent = `Restored ${saved.trades.length} persisted simulation trades from ${new Intl.DateTimeFormat('en-NG', { timeZone: 'Africa/Lagos', dateStyle: 'medium', timeStyle: 'short' }).format(new Date(saved.savedAt || Date.now()))} WAT. Run again to refresh. `;
       } catch (e) {}
     }
     setInterval(updateClock, 1000);
     updateClock();
+
+    let deferredInstallPrompt = null;
+    window.addEventListener('beforeinstallprompt', (event) => {
+      event.preventDefault();
+      deferredInstallPrompt = event;
+      $('installPwaBtn').style.display = 'inline-flex';
+    });
+    window.addEventListener('appinstalled', () => {
+      deferredInstallPrompt = null;
+      $('installPwaBtn').style.display = 'none';
+    });
+    async function installPwa() {
+      if (!deferredInstallPrompt) return;
+      deferredInstallPrompt.prompt();
+      await deferredInstallPrompt.userChoice;
+      deferredInstallPrompt = null;
+      $('installPwaBtn').style.display = 'none';
+    }
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/service-worker.js').catch(() => {});
 
     // Initial setup from memory
     applySettingsToInputs();

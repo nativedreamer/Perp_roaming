@@ -1,6 +1,10 @@
 import math
-from datetime import datetime, timezone
+import os
+from datetime import datetime
+from zoneinfo import ZoneInfo
 from typing import List, Dict, Any, Optional, Tuple
+
+APP_TIMEZONE = ZoneInfo(os.getenv("APP_TIMEZONE", "Africa/Lagos"))
 
 class Candle:
     __slots__ = ('t', 'o', 'h', 'l', 'c', 'v')
@@ -67,12 +71,12 @@ def calculate_indicators(candles: List[Candle], atr_period: int = 14) -> List[Di
 def calculate_vwap(candles: List[Candle], index: int, weekly: bool = False) -> float:
     """
     Computes session-anchored VWAP up to candle at index.
-    Daily resets at UTC midnight; weekly resets at UTC week start.
+    Daily resets at Africa/Lagos midnight; weekly resets at Africa/Lagos week start.
     """
     if index < 0 or index >= len(candles):
         return 0.0
 
-    target_dt = datetime.fromtimestamp(candles[index].t / 1000.0, tz=timezone.utc)
+    target_dt = datetime.fromtimestamp(candles[index].t / 1000.0, tz=APP_TIMEZONE)
     if weekly:
         target_key = f"{target_dt.year}-W{target_dt.isocalendar()[1]}"
     else:
@@ -83,7 +87,7 @@ def calculate_vwap(candles: List[Candle], index: int, weekly: bool = False) -> f
 
     # Walk backwards until session boundary
     for j in range(index, -1, -1):
-        dt = datetime.fromtimestamp(candles[j].t / 1000.0, tz=timezone.utc)
+        dt = datetime.fromtimestamp(candles[j].t / 1000.0, tz=APP_TIMEZONE)
         if weekly:
             k = f"{dt.year}-W{dt.isocalendar()[1]}"
         else:

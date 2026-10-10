@@ -3,6 +3,7 @@ import os
 import logging
 from contextlib import asynccontextmanager
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from typing import Dict, Any, Optional
 
 from fastapi import FastAPI, HTTPException, BackgroundTasks, Query
@@ -114,7 +115,8 @@ async def get_system_status():
         "trending_pairs_count": len(scanner.trending_pairs),
         "last_scan_time": scanner.last_scan_time.isoformat() if scanner.last_scan_time else None,
         "stats": stats,
-        "timestamp_utc": datetime.utcnow().isoformat()
+        "timezone": settings.APP_TIMEZONE,
+        "timestamp_local": datetime.now(ZoneInfo(settings.APP_TIMEZONE)).isoformat()
     }
 
 @app.get("/api/signals")
@@ -431,6 +433,14 @@ async def download_project_zip():
 frontend_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend")
 if os.path.exists(frontend_dir):
     app.mount("/static", StaticFiles(directory=frontend_dir), name="static")
+
+    @app.get("/manifest.webmanifest")
+    async def serve_manifest():
+        return FileResponse(os.path.join(frontend_dir, "manifest.webmanifest"), media_type="application/manifest+json")
+
+    @app.get("/service-worker.js")
+    async def serve_service_worker():
+        return FileResponse(os.path.join(frontend_dir, "service-worker.js"), media_type="application/javascript")
 
     @app.get("/")
     async def serve_index():
