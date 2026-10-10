@@ -1279,6 +1279,52 @@
             </div>
           </div>
 
+          <div class="panel-header" style="margin-top:10px; margin-bottom:8px;">
+            <span class="panel-title" style="font-size:10.5px;">🧪 Simulation Risk Engine</span>
+            <span style="font-size:9px; color:var(--accent-amber);">PAPER ONLY</span>
+          </div>
+          <div class="form-group">
+            <label>Simulation Mode</label>
+            <select class="form-select" id="simulationModeSelect" onchange="onSettingChanged('simulationMode')">
+              <option value="paper">Paper Trade · Flat Position Size</option>
+              <option value="compound">Paper Compound Simulation · Reinvest Profits</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Signal Score Threshold</label>
+              <input class="form-input" id="signalThresholdInput" type="number" value="80" min="0" max="100" step="1" onchange="onSettingChanged('signalThreshold')">
+            </div>
+            <div class="form-group">
+              <label>Risk per Trade (%)</label>
+              <input class="form-input" id="riskPerTradeInput" type="number" value="1" min="0.1" max="10" step="0.1" onchange="onSettingChanged('riskPerTrade')">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Starting Equity</label>
+              <input class="form-input" id="startingEquityInput" type="number" value="10000" min="1" step="100" onchange="onSettingChanged('startingEquity')">
+            </div>
+            <div class="form-group">
+              <label>Flat Trade Size</label>
+              <input class="form-input" id="baseTradeSizeInput" type="number" value="100" min="1" step="10" onchange="onSettingChanged('baseTradeSize')">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Leverage Range</label>
+              <div style="display:flex; gap:5px;"><input class="form-input" id="minLeverageInput" type="number" value="5" min="1" max="20" step="0.5" onchange="onSettingChanged('minLeverage')"><input class="form-input" id="maxLeverageInput" type="number" value="10" min="1" max="20" step="0.5" onchange="onSettingChanged('maxLeverage')"></div>
+            </div>
+            <div class="form-group">
+              <label>Take Profit Mode</label>
+              <select class="form-select" id="tpModeSelect" onchange="onSettingChanged('tpMode')"><option value="rr">Risk / Reward</option><option value="percentage">Percentage Target</option></select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>TP Percentage Target</label>
+            <input class="form-input" id="tpPercentageInput" type="number" value="5" min="0.1" max="100" step="0.1" onchange="onSettingChanged('tpPercentage')">
+          </div>
+
           <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
             <button class="btn-terminal" style="font-size:10px; padding:4px 8px; min-height:28px;" onclick="resetSettingsToDefaults()">
               ↺ Reset to Defaults
@@ -1346,8 +1392,17 @@
               <div class="bt-metric"><b id="btProfitFactor" style="color:var(--accent-green);">0.0</b><small>Profit Factor</small></div>
               <div class="bt-metric"><b id="btTp1Hits">0</b><small>TP1 Hits</small></div>
               <div class="bt-metric"><b id="btSlHits" style="color:var(--accent-red);">0</b><small>SL Hits</small></div>
+              <div class="bt-metric"><b id="btFinalEquity" style="color:var(--accent-cyan);">$0</b><small>Final Equity</small></div>
+              <div class="bt-metric"><b id="btNetPnl" style="color:var(--accent-green);">$0</b><small>Net PnL</small></div>
+              <div class="bt-metric"><b id="btFundingPnl" style="color:var(--accent-amber);">$0</b><small>Funding PnL</small></div>
+              <div class="bt-metric"><b id="btAvgLeverage">0x</b><small>Avg Leverage</small></div>
             </div>
             <div id="btSummaryNarrative" style="font-size:10.5px; color:var(--text-muted); margin-top:8px; line-height:1.4;"></div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; gap:8px;">
+              <span style="font-size:10px; color:var(--text-muted);">Simulation activity · grouped by UTC day</span>
+              <button class="btn-terminal" style="padding:5px 8px;" onclick="downloadSimulationCsv()">⇩ Download CSV</button>
+            </div>
+            <div id="simulationActivityContainer" style="margin-top:6px; max-height:300px; overflow:auto;"></div>
           </div>
         </div>
 
@@ -1467,6 +1522,15 @@
       trendFilter: 'zone',
       slMult: 2.5,
       tpRatio: 1.5,
+      simulationMode: 'paper',
+      signalThreshold: 80,
+      riskPerTrade: 1,
+      startingEquity: 10000,
+      baseTradeSize: 100,
+      minLeverage: 5,
+      maxLeverage: 10,
+      tpMode: 'rr',
+      tpPercentage: 5,
       soundEnabled: true,
       feedFilter: 'ALL',
       viewMode: 'cards', // 'cards' or 'table' on mobile
@@ -1530,6 +1594,24 @@
         userSettings.slMult = parseFloat($('slMultInput').value) || 2.5;
       } else if (key === 'tpRatio') {
         userSettings.tpRatio = parseFloat($('tpRatioInput').value) || 1.5;
+      } else if (key === 'simulationMode') {
+        userSettings.simulationMode = $('simulationModeSelect').value;
+      } else if (key === 'signalThreshold') {
+        userSettings.signalThreshold = Math.max(0, Math.min(100, parseFloat($('signalThresholdInput').value) || 80));
+      } else if (key === 'riskPerTrade') {
+        userSettings.riskPerTrade = Math.max(0.1, parseFloat($('riskPerTradeInput').value) || 1);
+      } else if (key === 'startingEquity') {
+        userSettings.startingEquity = Math.max(1, parseFloat($('startingEquityInput').value) || 10000);
+      } else if (key === 'baseTradeSize') {
+        userSettings.baseTradeSize = Math.max(1, parseFloat($('baseTradeSizeInput').value) || 100);
+      } else if (key === 'minLeverage') {
+        userSettings.minLeverage = Math.max(1, parseFloat($('minLeverageInput').value) || 5);
+      } else if (key === 'maxLeverage') {
+        userSettings.maxLeverage = Math.max(userSettings.minLeverage, parseFloat($('maxLeverageInput').value) || 10);
+      } else if (key === 'tpMode') {
+        userSettings.tpMode = $('tpModeSelect').value;
+      } else if (key === 'tpPercentage') {
+        userSettings.tpPercentage = Math.max(0.1, parseFloat($('tpPercentageInput').value) || 5);
       } else if (key === 'btPair') {
         userSettings.btPair = $('btPairSelect').value;
       } else if (key === 'btTf') {
@@ -1547,6 +1629,15 @@
       if ($('trendFilterSelect')) $('trendFilterSelect').value = userSettings.trendFilter;
       if ($('slMultInput')) $('slMultInput').value = userSettings.slMult;
       if ($('tpRatioInput')) $('tpRatioInput').value = userSettings.tpRatio;
+      if ($('simulationModeSelect')) $('simulationModeSelect').value = userSettings.simulationMode;
+      if ($('signalThresholdInput')) $('signalThresholdInput').value = userSettings.signalThreshold;
+      if ($('riskPerTradeInput')) $('riskPerTradeInput').value = userSettings.riskPerTrade;
+      if ($('startingEquityInput')) $('startingEquityInput').value = userSettings.startingEquity;
+      if ($('baseTradeSizeInput')) $('baseTradeSizeInput').value = userSettings.baseTradeSize;
+      if ($('minLeverageInput')) $('minLeverageInput').value = userSettings.minLeverage;
+      if ($('maxLeverageInput')) $('maxLeverageInput').value = userSettings.maxLeverage;
+      if ($('tpModeSelect')) $('tpModeSelect').value = userSettings.tpMode;
+      if ($('tpPercentageInput')) $('tpPercentageInput').value = userSettings.tpPercentage;
       if ($('btTfSelect')) $('btTfSelect').value = userSettings.btTf;
       if ($('btBarsInput')) $('btBarsInput').value = userSettings.btBars;
       if ($('customApiBaseInput') && userSettings.customApiBase) $('customApiBaseInput').value = userSettings.customApiBase;
@@ -3061,107 +3152,152 @@
     // ==========================================
     // HISTORICAL BACKTESTING SIMULATOR
     // ==========================================
+    function simulationLeverage(score) {
+      const min = Number(userSettings.minLeverage || 5);
+      const max = Math.max(min, Number(userSettings.maxLeverage || 10));
+      const ratio = Math.max(0, Math.min(1, (Number(score) - 60) / 30));
+      return +(min + ratio * (max - min)).toFixed(2);
+    }
+
+    function calculateSimulationLevels(entry, direction, atr, score, equity) {
+      const leverage = simulationLeverage(score);
+      const threshold = Number(userSettings.signalThreshold ?? 80);
+      const compound = userSettings.simulationMode === 'compound' && Number(score) > threshold;
+      const margin = compound
+        ? equity * 0.10
+        : Number(userSettings.baseTradeSize || 100);
+      const positionSize = Math.min(Math.max(0, margin), Math.max(0, equity)) * leverage;
+      const riskFraction = Math.max(0.001, Number(userSettings.riskPerTrade || 1) / 100);
+      const slDistancePct = Math.max(0.0001, (equity * riskFraction) / Math.max(positionSize * leverage, 1e-9));
+      const atrDistancePct = (Math.max(atr, entry * 0.0001) * Number(userSettings.slMult || 2.5)) / Math.max(entry, 1e-9);
+      const stopPct = Math.min(slDistancePct, Math.max(atrDistancePct, 0.0001));
+      const tpPct = userSettings.tpMode === 'percentage'
+        ? Math.max(0.001, Number(userSettings.tpPercentage || 5) / 100)
+        : stopPct * Math.max(0.1, Number(userSettings.tpRatio || 1.5));
+      const isLong = direction === 'LONG';
+      return {
+        leverage, margin, positionSize, compound,
+        sl: entry * (isLong ? 1 - stopPct : 1 + stopPct),
+        tp1: entry * (isLong ? 1 + tpPct : 1 - tpPct),
+        tp2: entry * (isLong ? 1 + tpPct * 2 : 1 - tpPct * 2),
+        stopPct: stopPct * 100, tpPct: tpPct * 100
+      };
+    }
+
+    const fundingCache = new Map();
+    async function getCurrentFundingRate(symbol) {
+      const cached = fundingCache.get(symbol);
+      if (cached && Date.now() - cached.time < 8 * 60 * 60 * 1000) return cached.rate;
+      try {
+        const base = (userSettings.customApiBase || '').replace(/\/$/, '');
+        const url = base ? `${base}/api/funding/${symbol}` : `https://fapi.binance.com/fapi/v1/fundingRate?symbol=${symbol}&limit=1`;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('funding request failed');
+        const payload = await response.json();
+        const row = Array.isArray(payload) ? payload[payload.length - 1] : payload;
+        const rate = Number(row.fundingRate ?? row.funding_rate ?? 0);
+        fundingCache.set(symbol, { rate, time: Date.now() });
+        return rate;
+      } catch (e) {
+        return 0;
+      }
+    }
+
+    function settleSimulationTrade(trade, exitPrice, exitTime, fundingRate) {
+      const signedMove = trade.direction === 'LONG'
+        ? (exitPrice - trade.entry) / trade.entry
+        : (trade.entry - exitPrice) / trade.entry;
+      const gross = trade.positionSize * signedMove;
+      const hours = Math.max(0, exitTime - trade.entryTime) / 3600000;
+      const funding = -trade.positionSize * fundingRate * (hours / 8) * (trade.direction === 'LONG' ? 1 : -1);
+      return { gross, funding, net: gross + funding, hours };
+    }
+
+    function renderSimulationActivity(trades) {
+      const container = $('simulationActivityContainer');
+      if (!container) return;
+      if (!trades.length) {
+        container.innerHTML = '<div style="padding:14px; color:var(--text-dim); text-align:center;">No completed simulation trades.</div>';
+        return;
+      }
+      const groups = {};
+      trades.slice().reverse().forEach(t => {
+        const day = new Date(t.exitTime || t.entryTime).toISOString().slice(0, 10);
+        (groups[day] ||= []).push(t);
+      });
+      container.innerHTML = Object.entries(groups).map(([day, dayTrades]) => `
+        <div style="margin-bottom:8px;">
+          <div style="font-size:10px; color:var(--accent-cyan); font-family:var(--font-mono); margin-bottom:4px;">${day} · ${dayTrades.length} trades</div>
+          ${dayTrades.map(t => `<div style="display:grid; grid-template-columns:1fr auto auto auto; gap:8px; padding:5px 6px; border-bottom:1px solid rgba(27,36,56,.65); font-size:10px;">
+            <span><b>${t.symbol}</b> ${t.direction} · ${t.result}</span><span>${t.strengthScore}/100 · ${t.leverage.toFixed(1)}x</span><span style="color:${t.net >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'}">${t.net >= 0 ? '+' : ''}$${t.net.toFixed(2)}</span><span style="color:var(--accent-amber)">${t.funding.toFixed(2)} fund</span>
+          </div>`).join('')}
+        </div>`).join('');
+    }
+
+    function downloadSimulationCsv() {
+      const trades = window.lastSimulationTrades || [];
+      if (!trades.length) { alert('Run a simulation first.'); return; }
+      const headers = ['entry_utc','exit_utc','symbol','direction','score','compound','leverage','margin','position_size','entry','exit','result','gross_pnl','funding_pnl','net_pnl','funding_rate'];
+      const rows = trades.map(t => [new Date(t.entryTime).toISOString(), new Date(t.exitTime).toISOString(), t.symbol, t.direction, t.strengthScore, t.compound, t.leverage, t.margin, t.positionSize, t.entry, t.exit, t.result, t.gross, t.funding, t.net, t.fundingRate]);
+      const csv = [headers, ...rows].map(row => row.map(v => `"${String(v).replaceAll('"','""')}"`).join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob); const a = document.createElement('a');
+      a.href = url; a.download = `perp-roaming-simulation-${new Date().toISOString().slice(0,10)}.csv`; a.click(); URL.revokeObjectURL(url);
+    }
+
     async function runHistoricalBacktest() {
       const sym = $('btPairSelect').value || 'BTCUSDT';
       const tf = userSettings.btTf || '5m';
       const bars = userSettings.btBars || 500;
-      const slMult = userSettings.slMult || 2.5;
-      const tpRatio = userSettings.tpRatio || 1.5;
       const trendMode = userSettings.trendFilter || 'zone';
-
       $('btResultContainer').style.display = 'block';
-      $('btSummaryNarrative').textContent = `Fetching ${bars} historical candles for ${sym}...`;
-
+      $('btSummaryNarrative').textContent = `Fetching ${bars} historical candles and current funding rate for ${sym}...`;
       try {
         const res = await fetch(`https://fapi.binance.com/fapi/v1/klines?symbol=${sym}&interval=${tf}&limit=${bars}`);
         if (!res.ok) throw new Error('Failed to load klines');
         const raw = await res.json();
-        const candles = raw.map(k => ({
-          t: parseInt(k[0]),
-          o: parseFloat(k[1]),
-          h: parseFloat(k[2]),
-          l: parseFloat(k[3]),
-          c: parseFloat(k[4]),
-          v: parseFloat(k[5])
-        }));
-
+        const candles = raw.map(k => ({ t: +k[0], o: +k[1], h: +k[2], l: +k[3], c: +k[4], v: +k[5] }));
         const ind = calcIndicators(candles, 14);
-        let trades = [];
-        let inTrade = null;
-
+        const fundingRate = await getCurrentFundingRate(sym);
+        let equity = Number(userSettings.startingEquity || 10000);
+        let inTrade = null; const trades = [];
+        let tp1Hits = 0; let slHits = 0; let leverageSum = 0; let fundingTotal = 0;
         for (let i = 40; i < candles.length - 1; i++) {
           const c = candles[i];
-
           if (inTrade) {
-            const isLong = inTrade.dir === 'LONG';
+            const isLong = inTrade.direction === 'LONG';
             const hitSL = isLong ? c.l <= inTrade.sl : c.h >= inTrade.sl;
             const hitTP1 = isLong ? c.h >= inTrade.tp1 : c.l <= inTrade.tp1;
             const hitTP2 = isLong ? c.h >= inTrade.tp2 : c.l <= inTrade.tp2;
-
-            if (hitSL) {
-              inTrade.result = inTrade.hitTp1 ? 'WIN_TP1_TRAIL' : 'LOSS';
-              trades.push(inTrade);
-              inTrade = null;
-              continue;
-            } else if (hitTP1 && !inTrade.hitTp1) {
-              inTrade.hitTp1 = true;
-            } else if (hitTP2 && !inTrade.hitTp2) {
-              inTrade.hitTp2 = true;
-              inTrade.result = 'WIN_TP2';
-              trades.push(inTrade);
-              inTrade = null;
-              continue;
+            if (hitSL || hitTP2) {
+              const exit = hitSL ? inTrade.sl : inTrade.tp2;
+              const settled = settleSimulationTrade(inTrade, exit, c.t, fundingRate);
+              const result = hitSL && !inTrade.hitTp1 ? 'LOSS' : (hitSL ? 'WIN_TP1_TRAIL' : 'WIN_TP2');
+              if (result.includes('WIN')) tp1Hits++; else slHits++;
+              equity += settled.net; fundingTotal += settled.funding;
+              trades.push({ ...inTrade, exit: exit, exitTime: c.t, result, ...settled, fundingRate });
+              leverageSum += inTrade.leverage; inTrade = null; continue;
             }
+            if (hitTP1 && !inTrade.hitTp1) { inTrade.hitTp1 = true; tp1Hits++; }
           }
-
           if (!inTrade) {
             const sig = evaluateSignalBar(candles, ind, i, trendMode, true);
             if (sig) {
-              const entry = c.c;
-              const atr = ind[i].atr || (entry * 0.01);
-              const slDist = atr * slMult;
-              const tpDist = slDist * tpRatio;
-
-              inTrade = {
-                entryIdx: i,
-                dir: sig.direction,
-                entry,
-                sl: sig.direction === 'LONG' ? entry - slDist : entry + slDist,
-                tp1: sig.direction === 'LONG' ? entry + tpDist : entry - tpDist,
-                tp2: sig.direction === 'LONG' ? entry + tpDist * 2 : entry - tpDist * 2,
-                strengthScore: sig.strength.score,
-                hitTp1: false,
-                hitTp2: false,
-                result: null
-              };
+              const levels = calculateSimulationLevels(c.c, sig.direction, ind[i].atr || c.c * .01, sig.strength.score, equity);
+              inTrade = { symbol: sym, entryIdx: i, entryTime: c.t, direction: sig.direction, entry: c.c, strengthScore: sig.strength.score, hitTp1: false, ...levels };
             }
           }
         }
-
-        const completed = trades.length;
-        const wins = trades.filter(t => t.result.includes('WIN')).length;
-        const losses = trades.filter(t => t.result === 'LOSS').length;
-        const wr = completed > 0 ? ((wins / completed) * 100).toFixed(1) : 0;
-        const profitFactor = losses > 0 ? ((wins * tpRatio) / losses).toFixed(2) : (wins > 0 ? '99.0' : '0.0');
-
-        const avgStrength = completed > 0
-          ? (trades.reduce((a, b) => a + b.strengthScore, 0) / completed).toFixed(1)
-          : '--';
-
-        $('btTotalTrades').textContent = completed;
-        $('btWinRate').textContent = `${wr}%`;
-        $('btAvgStrength').textContent = `${avgStrength}/100`;
-        $('btProfitFactor').textContent = profitFactor;
-        $('btTp1Hits').textContent = wins;
-        $('btSlHits').textContent = losses;
-
-        $('btSummaryNarrative').innerHTML = `
-          <b>${sym} (${tf}) Simulation:</b> ${bars} candles yielded <b>${completed} setups</b> with <b>${wr}% win rate</b> and <b>${profitFactor} Profit Factor</b> (Avg Strength: <b>${avgStrength}/100</b>).
-        `;
-
-      } catch (err) {
-        $('btSummaryNarrative').textContent = 'Backtest failed: ' + err.message;
-      }
+        window.lastSimulationTrades = trades;
+        localStorage.setItem('perp_roaming_last_simulation', JSON.stringify({ trades, equity, savedAt: Date.now() }));
+        renderSimulationActivity(trades);
+        const completed = trades.length; const wins = trades.filter(t => t.result.includes('WIN')).length; const losses = trades.filter(t => t.result === 'LOSS').length;
+        const wr = completed ? ((wins / completed) * 100).toFixed(1) : '0.0';
+        const avgStrength = completed ? (trades.reduce((a,b) => a + b.strengthScore, 0) / completed).toFixed(1) : '--';
+        $('btTotalTrades').textContent = completed; $('btWinRate').textContent = `${wr}%`; $('btAvgStrength').textContent = `${avgStrength}/100`; $('btProfitFactor').textContent = losses ? ((trades.filter(t => t.net > 0).reduce((a,b) => a + b.net, 0) / Math.abs(trades.filter(t => t.net < 0).reduce((a,b) => a + b.net, 0))).toFixed(2)) : (wins ? '99.0' : '0.0'); $('btTp1Hits').textContent = tp1Hits; $('btSlHits').textContent = slHits;
+        $('btFinalEquity').textContent = `$${equity.toFixed(2)}`; $('btNetPnl').textContent = `$${(equity - Number(userSettings.startingEquity || 10000)).toFixed(2)}`; $('btFundingPnl').textContent = `$${fundingTotal.toFixed(2)}`; $('btAvgLeverage').textContent = `${completed ? (leverageSum / completed).toFixed(2) : '0.00'}x`;
+        $('btSummaryNarrative').innerHTML = `<b>${sym} (${tf})</b> · <b>${userSettings.simulationMode === 'compound' ? 'Compound' : 'Flat Paper'}</b> mode · compounding only for scores <b>> ${userSettings.signalThreshold}</b> · funding rate <b>${(fundingRate * 100).toFixed(4)}%</b> per 8h.`;
+      } catch (err) { $('btSummaryNarrative').textContent = 'Simulation failed: ' + err.message; }
     }
 
     // ==========================================
@@ -3284,11 +3420,24 @@
       $('masterClock').textContent = `${h}:${m}:${s} UTC`;
       $('masterDate').textContent = now.toUTCString().slice(0, 16).toUpperCase();
     }
+
+    function restoreLastSimulation() {
+      try {
+        const saved = JSON.parse(localStorage.getItem('perp_roaming_last_simulation') || 'null');
+        if (!saved || !Array.isArray(saved.trades) || !saved.trades.length) return;
+        window.lastSimulationTrades = saved.trades;
+        $('btResultContainer').style.display = 'block';
+        renderSimulationActivity(saved.trades);
+        if (typeof saved.equity === 'number') $('btFinalEquity').textContent = `$${saved.equity.toFixed(2)}`;
+        $('btSummaryNarrative').textContent = `Restored ${saved.trades.length} persisted simulation trades from ${new Date(saved.savedAt || Date.now()).toUTCString()}. Run again to refresh. `;
+      } catch (e) {}
+    }
     setInterval(updateClock, 1000);
     updateClock();
 
     // Initial setup from memory
     applySettingsToInputs();
+    restoreLastSimulation();
     renderSignalsTable();
     updateCockpitKpis();
     initExchangeSymbols();

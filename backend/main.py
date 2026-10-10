@@ -14,6 +14,7 @@ from pydantic import BaseModel
 from backend.config import settings
 from backend.database import SignalDatabase
 from backend.scanner import BinanceFuturesScanner
+from backend.funding import funding_rates
 from backend.strategy import (
     Candle, calculate_indicators, evaluate_signal, calculate_levels,
     calculate_signal_strength, calculate_vwap
@@ -145,6 +146,11 @@ async def get_market_tickers():
         "trending": scanner.trending_pairs,
         "tickers": list(scanner.market_cache.values())
     }
+
+@app.get("/api/funding/{symbol}")
+async def get_funding_rate(symbol: str):
+    """Return a cached current Binance Futures funding rate for simulation PnL."""
+    return await funding_rates.get(symbol)
 
 @app.post("/api/scan/toggle")
 async def toggle_scanner():
@@ -436,4 +442,3 @@ if os.path.exists(frontend_dir):
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("backend.main:app", host=settings.HOST, port=settings.PORT, reload=settings.DEBUG)
-

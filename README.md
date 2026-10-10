@@ -23,6 +23,9 @@ An autonomous, 24/7 perpetual futures market scanner and algorithmic signal gene
   - Trigger instant manual scan passes
   - Real-time signals feed with TP/SL hit status tracking
   - Historical in-browser backtester over Binance candles
+  - Paper/compound simulation with score-gated reinvestment, dynamic risk-based stops, dynamic leverage, and percentage or RR take-profit modes
+  - Funding-aware PnL using the cached Binance Futures funding endpoint
+  - Persistent browser simulation state with UTC-day activity grouping and CSV export
   - Live trending pairs and 24h ticker cards
 - **Persistence**: SQLite database (`signals.db`) recording all signals, levels, and audit logs.
 - **Production Ready**: Pre-configured with `Dockerfile`, `docker-compose.yml`, and `render.yaml` for 1-click cloud deployment.
