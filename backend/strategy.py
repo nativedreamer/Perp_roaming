@@ -146,6 +146,132 @@ def get_trend_state(
         "zone_bull": zone_bull
     }
 
+def calculate_signal_strength(
+    candles: List[Candle],
+    indicators: List[Dict[str, float]],
+    index: int,
+    direction: str,
+    vwap: float
+) -> Dict[str, Any]:
+    """
+    Computes a deterministic quantitative Signal Strength Score (0 to 100) based on:
+      1. Momentum & EMA Spread Velocity (max 25 pts)
+      2. VWAP Structural Alignment & Proximity (max 20 pts)
+      3. Macro Trend Alignment with EMA 200 (max 20 pts)
+      4. Relative Volume Expansion (R-Vol) (max 20 pts)
+      5. Candle Conviction & Body-to-Range Ratio (max 15 pts)
+    """
+    c = candles[index]
+    curr_ind = indicators[index]
+    prev_ind = indicators[index - 1] if index > 0 else curr_ind
+    atr = curr_ind.get("atr") or (c.c * 0.01)
+    price = c.c
+    is_long = direction in ("LONG", "CALL")
+
+    # 1. Momentum & EMA Spread Velocity (max 25)
+    ema_spread = abs(curr_ind["e11"] - curr_ind["e34"])
+    spread_ratio = ema_spread / max(atr, 1e-8)
+    mom_score = min(18, int(round(spread_ratio * 16)))
+    prev_spread = abs(prev_ind["e11"] - prev_ind["e34"])
+    if ema_spread > prev_spread:
+        mom_score += 7
+    else:
+        mom_score += 3
+    mom_score = max(5, min(25, mom_score))
+
+    # 2. VWAP Alignment & Breakout Proximity (max 20)
+    vwap_score = 0
+    if is_long:
+        if price > vwap:
+            dist_atr = (price - vwap) / max(atr, 1e-8)
+            if 0.2 <= dist_atr <= 2.5:
+                vwap_score = 20
+            elif 2.5 < dist_atr <= 4.0:
+                vwap_score = 14
+            elif dist_atr < 0.2:
+                vwap_score = 12
+            else:
+                vwap_score = 8
+        else:
+            vwap_score = 2
+    else:
+        if price < vwap:
+            dist_atr = (vwap - price) / max(atr, 1e-8)
+            if 0.2 <= dist_atr <= 2.5:
+                vwap_score = 20
+            elif 2.5 < dist_atr <= 4.0:
+                vwap_score = 14
+            elif dist_atr < 0.2:
+                vwap_score = 12
+            else:
+                vwap_score = 8
+        else:
+            vwap_score = 2
+
+    # 3. Macro Trend Alignment (EMA 200) (max 20)
+    trend_score = 0
+    e200 = curr_ind["e200"]
+    if is_long:
+        if price > e200: trend_score += 8
+        if curr_ind["e11"] > e200: trend_score += 6
+        if curr_ind["e34"] > e200: trend_score += 6
+    else:
+        if price < e200: trend_score += 8
+        if curr_ind["e11"] < e200: trend_score += 6
+        if curr_ind["e34"] < e200: trend_score += 6
+
+    # 4. Relative Volume Expansion (max 20)
+    vol_lookback = min(20, index)
+    if vol_lookback > 0:
+        avg_vol = sum(candles[k].v for k in range(index - vol_lookback, index)) / vol_lookback
+    else:
+        avg_vol = c.v
+    r_vol = c.v / max(avg_vol, 1e-8) if avg_vol > 0 else 1.0
+
+    if r_vol >= 2.0:
+        vol_score = 20
+    elif r_vol >= 1.5:
+        vol_score = 16
+    elif r_vol >= 1.1:
+        vol_score = 13
+    elif r_vol >= 0.8:
+        vol_score = 10
+    else:
+        vol_score = 5
+
+    # 5. Candle Conviction (max 15)
+    c_range = c.h - c.l
+    c_body = abs(c.c - c.o)
+    body_ratio = c_body / max(c_range, 1e-8) if c_range > 0 else 0.5
+    direction_aligned = (c.c > c.o) if is_long else (c.c < c.o)
+
+    if direction_aligned:
+        if body_ratio >= 0.70:
+            candle_score = 15
+        elif body_ratio >= 0.50:
+            candle_score = 12
+        elif body_ratio >= 0.35:
+            candle_score = 9
+        else:
+            candle_score = 6
+    else:
+        candle_score = 3
+
+    total_score = min(100, max(15, mom_score + vwap_score + trend_score + vol_score + candle_score))
+
+    return {
+        "score": total_score,
+        "breakdown": {
+            "momentum": mom_score,
+            "vwap": vwap_score,
+            "trend": trend_score,
+            "volume": vol_score,
+            "conviction": candle_score
+        },
+        "r_vol": round(r_vol, 2),
+        "body_ratio": int(round(body_ratio * 100))
+    }
+
 def evaluate_signal(
     candles: List[Candle],
     indicators: List[Dict[str, float]],
@@ -180,20 +306,30 @@ def evaluate_signal(
     short_valid = bear_cross and trend["dn"] and (not require_candle_color or is_red)
 
     if long_valid:
+        strength = calculate_signal_strength(candles, indicators, index, "LONG", trend["vwap"])
         return {
             "direction": "LONG",
             "strategy": "EMA/VWAP",
             "vwap": trend["vwap"],
             "ema200": curr_ind["e200"],
-            "atr": curr_ind["atr"]
+            "atr": curr_ind["atr"],
+            "signal_strength": strength["score"],
+            "strength_breakdown": strength["breakdown"],
+            "r_vol": strength["r_vol"],
+            "body_ratio": strength["body_ratio"]
         }
     elif short_valid:
+        strength = calculate_signal_strength(candles, indicators, index, "SHORT", trend["vwap"])
         return {
             "direction": "SHORT",
             "strategy": "EMA/VWAP",
             "vwap": trend["vwap"],
             "ema200": curr_ind["e200"],
-            "atr": curr_ind["atr"]
+            "atr": curr_ind["atr"],
+            "signal_strength": strength["score"],
+            "strength_breakdown": strength["breakdown"],
+            "r_vol": strength["r_vol"],
+            "body_ratio": strength["body_ratio"]
         }
 
     return None

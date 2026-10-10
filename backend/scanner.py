@@ -206,11 +206,17 @@ class BinanceFuturesScanner:
                     "tp4_price": levels["tp4"],
                     "risk_reward_ratio": levels["risk_reward_ratio"],
                     "atr": eval_ind["atr"],
+                    "signal_strength": sig_result.get("signal_strength", 75),
+                    "strength_breakdown": sig_result.get("strength_breakdown", {}),
                     "status": "OPEN",
                     "metadata": {
                         "vwap": trend["vwap"],
                         "ema200": eval_ind["e200"],
-                        "bar_time": eval_candle.t
+                        "bar_time": eval_candle.t,
+                        "signal_strength": sig_result.get("signal_strength", 75),
+                        "strength_breakdown": sig_result.get("strength_breakdown", {}),
+                        "r_vol": sig_result.get("r_vol", 1.0),
+                        "body_ratio": sig_result.get("body_ratio", 50)
                     }
                 }
                 return signal_dict

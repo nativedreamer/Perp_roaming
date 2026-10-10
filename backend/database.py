@@ -137,7 +137,20 @@ class SignalDatabase:
         with self._get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT * FROM signals ORDER BY id DESC LIMIT ?", (limit,))
-            return [dict(row) for row in cursor.fetchall()]
+            results = []
+            for row in cursor.fetchall():
+                d = dict(row)
+                if d.get("metadata"):
+                    try:
+                        m = json.loads(d["metadata"])
+                        if "signal_strength" in m:
+                            d["signal_strength"] = m["signal_strength"]
+                        if "strength_breakdown" in m:
+                            d["strength_breakdown"] = m["strength_breakdown"]
+                    except Exception:
+                        pass
+                results.append(d)
+            return results
 
     def get_stats(self) -> Dict[str, Any]:
         with self._get_connection() as conn:
