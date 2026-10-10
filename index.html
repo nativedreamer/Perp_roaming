@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, viewport-fit=cover">
   <title>PERP ROAMING — 24/7 Binance Futures EMA/VWAP Algo Radar</title>
   <style>
     :root {
@@ -28,58 +28,67 @@
       --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
     body { background: var(--bg-dark); color: var(--text-main); font-size: 13px; line-height: 1.5; min-height: 100vh; padding: 12px; }
     
+    @media (max-width: 640px) {
+      body { padding: 8px; }
+    }
+
     /* SCROLLBAR */
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
     ::-webkit-scrollbar-track { background: var(--bg-dark); }
     ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: #334155; }
 
     /* LAYOUT CONTAINERS */
-    .terminal-container { max-width: 1720px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+    .terminal-container { max-width: 1720px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px; }
     
-    /* TOP MASTER HEADER */
+    /* MASTER TOP HEADER */
     .master-header {
       background: var(--bg-surface);
       border: 1px solid var(--border-subtle);
       border-radius: 10px;
-      padding: 12px 18px;
+      padding: 12px 16px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 16px;
+      gap: 12px;
       flex-wrap: wrap;
     }
-    .brand-section { display: flex; align-items: center; gap: 12px; }
+    .brand-section { display: flex; align-items: center; gap: 10px; }
     .brand-glyph {
-      width: 38px; height: 38px;
+      width: 36px; height: 36px;
       background: linear-gradient(135deg, rgba(0, 240, 255, 0.2), rgba(16, 185, 129, 0.1));
       border: 1px solid rgba(0, 240, 255, 0.4);
       border-radius: 8px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 19px; color: var(--accent-cyan);
-      box-shadow: 0 0 15px rgba(0, 240, 255, 0.15);
+      font-size: 18px; color: var(--accent-cyan);
+      box-shadow: 0 0 14px rgba(0, 240, 255, 0.15);
+      flex-shrink: 0;
     }
-    .brand-title { font-size: 16px; font-weight: 800; letter-spacing: 0.5px; color: #ffffff; display: flex; align-items: center; gap: 8px; }
+    .brand-title { font-size: 15px; font-weight: 800; letter-spacing: 0.5px; color: #ffffff; display: flex; align-items: center; gap: 6px; }
     .brand-title span { color: var(--accent-cyan); font-weight: 700; }
     .brand-subtitle { font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; }
 
-    .header-controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .header-controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    
     .btn-terminal {
       background: var(--bg-surface-elevated);
       color: var(--text-main);
       border: 1px solid var(--border-subtle);
       border-radius: 6px;
-      padding: 7px 12px;
-      font-size: 12px;
+      padding: 7px 11px;
+      min-height: 36px;
+      font-size: 11px;
       font-weight: 600;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      justify-content: center;
+      gap: 5px;
       transition: all 0.15s ease;
+      user-select: none;
     }
     .btn-terminal:hover { background: #1c253b; border-color: #2b395c; }
     .btn-terminal.active-cyan { border-color: rgba(0, 240, 255, 0.4); color: var(--accent-cyan); background: var(--accent-cyan-dim); }
@@ -88,69 +97,113 @@
     
     .clock-display {
       font-family: var(--font-mono);
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 700;
       color: var(--text-main);
       background: var(--bg-input);
       border: 1px solid var(--border-subtle);
-      padding: 6px 12px;
+      padding: 5px 10px;
       border-radius: 6px;
       text-align: right;
       letter-spacing: 0.5px;
     }
-    .clock-display small { display: block; font-size: 10px; color: var(--text-dim); font-weight: normal; }
+    .clock-display small { display: block; font-size: 9px; color: var(--text-dim); font-weight: normal; }
+
+    /* MOBILE SEGMENTED VIEW CONTROLLER (ONLY ON SMALL SCREENS) */
+    .mobile-tab-bar {
+      display: none;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 4px;
+    }
+    .mobile-tab-btn {
+      background: transparent;
+      border: 0;
+      color: var(--text-muted);
+      padding: 8px 4px;
+      min-height: 40px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      transition: all 0.15s ease;
+    }
+    .mobile-tab-btn.active {
+      background: var(--bg-surface-elevated);
+      color: var(--accent-cyan);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+      border: 1px solid rgba(0, 240, 255, 0.25);
+    }
+
+    @media (max-width: 1024px) {
+      .mobile-tab-bar { display: grid; }
+      .brand-subtitle { display: none; }
+      .master-header { padding: 10px 12px; }
+      .brand-title { font-size: 14px; }
+    }
 
     /* TICKER TAPE / MARKET PULSE */
     .ticker-bar {
       background: var(--bg-surface);
       border: 1px solid var(--border-subtle);
       border-radius: 8px;
-      padding: 8px 12px;
+      padding: 7px 12px;
       overflow-x: auto;
       white-space: nowrap;
       display: flex;
-      gap: 10px;
+      gap: 8px;
       align-items: center;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
     }
-    .ticker-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); font-weight: 700; margin-right: 4px; }
+    .ticker-bar::-webkit-scrollbar { display: none; }
+    .ticker-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-dim); font-weight: 700; margin-right: 2px; flex-shrink: 0; }
     .ticker-chip {
       background: var(--bg-surface-elevated);
       border: 1px solid var(--border-subtle);
-      border-radius: 6px;
-      padding: 4px 10px;
+      border-radius: 5px;
+      padding: 3px 8px;
       font-size: 11px;
       display: inline-flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       cursor: pointer;
       transition: border-color 0.15s ease;
       font-family: var(--font-mono);
+      flex-shrink: 0;
     }
     .ticker-chip:hover { border-color: var(--accent-cyan); }
     .ticker-chip b { color: #ffffff; }
     .ticker-chip .up { color: var(--accent-green); }
     .ticker-chip .down { color: var(--accent-red); }
 
-    /* SUMMARY COCKPIT KPI CARDS */
+    /* COCKPIT PERFORMANCE KPIS */
     .cockpit-grid {
       display: grid;
       grid-template-columns: repeat(6, 1fr);
-      gap: 10px;
+      gap: 8px;
     }
-    @media (max-width: 1280px) { .cockpit-grid { grid-template-columns: repeat(3, 1fr); } }
-    @media (max-width: 768px) { .cockpit-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 1200px) { .cockpit-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 640px) { .cockpit-grid { grid-template-columns: repeat(2, 1fr); } }
 
     .kpi-card {
       background: var(--bg-surface);
       border: 1px solid var(--border-subtle);
       border-radius: 8px;
-      padding: 12px 14px;
+      padding: 10px 12px;
       position: relative;
       overflow: hidden;
     }
-    .kpi-title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-dim); font-weight: 700; margin-bottom: 4px; }
-    .kpi-val { font-size: 20px; font-weight: 800; font-family: var(--font-mono); color: #ffffff; line-height: 1.2; }
-    .kpi-sub { font-size: 11px; color: var(--text-muted); margin-top: 4px; display: flex; align-items: center; gap: 4px; }
+    .kpi-title { font-size: 9px; text-transform: uppercase; letter-spacing: 0.7px; color: var(--text-dim); font-weight: 700; margin-bottom: 2px; }
+    .kpi-val { font-size: 18px; font-weight: 800; font-family: var(--font-mono); color: #ffffff; line-height: 1.2; }
+    .kpi-sub { font-size: 10px; color: var(--text-muted); margin-top: 3px; display: flex; align-items: center; gap: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .kpi-bar {
       position: absolute; bottom: 0; left: 0; height: 3px; background: var(--accent-cyan); width: 100%;
       opacity: 0.4;
@@ -160,39 +213,60 @@
     .workspace-grid {
       display: grid;
       grid-template-columns: 360px 1fr;
-      gap: 12px;
+      gap: 10px;
       align-items: start;
     }
-    @media (max-width: 1100px) { .workspace-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 1024px) {
+      .workspace-grid {
+        grid-template-columns: 1fr;
+      }
+      .workspace-sidebar { display: none; }
+      .workspace-sidebar.mobile-active { display: block; }
+      .workspace-main { display: none; }
+      .workspace-main.mobile-active { display: block; }
+    }
 
     /* SIDEBAR PANELS */
     .panel-card {
       background: var(--bg-surface);
       border: 1px solid var(--border-subtle);
       border-radius: 10px;
-      padding: 16px;
-      margin-bottom: 12px;
+      padding: 14px;
+      margin-bottom: 10px;
     }
     .panel-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 14px;
-      padding-bottom: 10px;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
       border-bottom: 1px solid var(--border-subtle);
     }
     .panel-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-main); display: flex; align-items: center; gap: 6px; }
     
-    .form-group { margin-bottom: 12px; }
+    .saved-badge {
+      font-size: 9px;
+      color: var(--accent-green);
+      font-family: var(--font-mono);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+    }
+    .saved-badge.visible { opacity: 1; }
+
+    .form-group { margin-bottom: 10px; }
     .form-group label {
-      display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 0.7px; color: var(--text-muted); font-weight: 700; margin-bottom: 5px;
+      display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 0.7px; color: var(--text-muted); font-weight: 700; margin-bottom: 4px;
     }
     .form-select, .form-input {
       width: 100%;
       background: var(--bg-input);
       border: 1px solid var(--border-subtle);
       border-radius: 6px;
-      padding: 8px 10px;
+      padding: 7px 9px;
+      min-height: 36px;
       color: var(--text-main);
       font-size: 12px;
       outline: none;
@@ -206,15 +280,15 @@
       background: var(--bg-surface-elevated);
       border: 1px solid var(--border-subtle);
       border-radius: 8px;
-      padding: 12px;
+      padding: 10px;
       margin-top: 10px;
     }
     .radar-progress-bar {
-      height: 6px;
+      height: 5px;
       background: var(--bg-input);
       border-radius: 3px;
       overflow: hidden;
-      margin: 8px 0;
+      margin: 6px 0;
       position: relative;
     }
     .radar-fill {
@@ -224,37 +298,39 @@
       transition: width 0.3s ease;
       box-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
     }
-    .radar-text { font-size: 11px; color: var(--text-muted); line-height: 1.5; font-family: var(--font-mono); }
+    .radar-text { font-size: 10.5px; color: var(--text-muted); line-height: 1.4; font-family: var(--font-mono); }
 
-    /* MAIN VIEWPORT: SIGNALS FEED */
+    /* MAIN FEED CONTAINER */
     .feed-container {
       background: var(--bg-surface);
       border: 1px solid var(--border-subtle);
       border-radius: 10px;
-      padding: 16px;
+      padding: 14px;
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 12px;
     }
     .feed-toolbar {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
       flex-wrap: wrap;
-      padding-bottom: 12px;
+      padding-bottom: 10px;
       border-bottom: 1px solid var(--border-subtle);
     }
-    .filter-tabs { display: flex; gap: 4px; background: var(--bg-input); padding: 3px; border-radius: 7px; border: 1px solid var(--border-subtle); }
+    .filter-tabs { display: flex; gap: 3px; background: var(--bg-input); padding: 3px; border-radius: 6px; border: 1px solid var(--border-subtle); overflow-x: auto; max-width: 100%; }
     .tab-btn {
       background: transparent;
       border: 0;
       color: var(--text-muted);
-      padding: 5px 11px;
-      border-radius: 5px;
+      padding: 5px 9px;
+      min-height: 30px;
+      border-radius: 4px;
       font-size: 11px;
       font-weight: 600;
       cursor: pointer;
+      white-space: nowrap;
       transition: all 0.15s ease;
     }
     .tab-btn:hover { color: #ffffff; }
@@ -265,7 +341,8 @@
       background: var(--bg-input);
       border: 1px solid var(--border-subtle);
       border-radius: 6px;
-      padding: 4px 10px;
+      padding: 4px 8px;
+      min-height: 34px;
     }
     .search-input-box input {
       background: transparent;
@@ -273,13 +350,14 @@
       outline: none;
       color: var(--text-main);
       font-size: 12px;
-      width: 170px;
+      width: 130px;
     }
 
-    /* SIGNALS DATA TABLE */
+    /* SIGNALS TABLE & RESPONSIVE CARDS */
     .table-wrapper {
       overflow-x: auto;
-      min-height: 400px;
+      -webkit-overflow-scrolling: touch;
+      min-height: 360px;
     }
     table.signals-table {
       width: 100%;
@@ -294,12 +372,12 @@
       text-transform: uppercase;
       letter-spacing: 0.8px;
       font-weight: 700;
-      padding: 10px 12px;
+      padding: 9px 10px;
       border-bottom: 1px solid var(--border-subtle);
       white-space: nowrap;
     }
     table.signals-table td {
-      padding: 10px 12px;
+      padding: 9px 10px;
       border-bottom: 1px solid rgba(27, 36, 56, 0.7);
       white-space: nowrap;
       font-variant-numeric: tabular-nums;
@@ -309,21 +387,60 @@
       background: rgba(20, 27, 43, 0.5);
     }
 
-    /* SIGNAL STRENGTH BADGES & PILLARS */
+    /* MOBILE SIGNAL CARDS CONTAINER (ALTERNATIVE VIEW) */
+    .signals-cards-grid {
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .signal-mobile-card {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .card-top-row { display: flex; justify-content: space-between; align-items: center; }
+    .card-pair-badge { font-size: 14px; font-weight: 800; color: #ffffff; display: flex; align-items: center; gap: 6px; }
+    .card-grid-data {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      background: var(--bg-input);
+      border-radius: 6px;
+      padding: 8px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+    }
+    .card-data-cell small { display: block; color: var(--text-dim); font-size: 9px; text-transform: uppercase; }
+    .card-data-cell b { color: #ffffff; font-size: 12px; }
+
+    /* VIEW MODE RESPONSIVE SWITCH */
+    @media (max-width: 768px) {
+      .signals-table-view-toggle { display: inline-flex; }
+      body.view-cards .table-wrapper { display: none; }
+      body.view-cards .signals-cards-grid { display: flex; }
+      body.view-table .table-wrapper { display: block; }
+      body.view-table .signals-cards-grid { display: none; }
+    }
+
+    /* STRENGTH BADGES */
     .strength-wrapper {
       display: inline-flex;
       flex-direction: column;
-      gap: 3px;
+      gap: 2px;
       cursor: pointer;
     }
     .strength-badge {
       display: inline-flex;
       align-items: center;
-      gap: 5px;
+      gap: 4px;
       font-family: var(--font-mono);
-      font-size: 11px;
+      font-size: 10.5px;
       font-weight: 800;
-      padding: 2px 7px;
+      padding: 2px 6px;
       border-radius: 4px;
       width: fit-content;
     }
@@ -333,8 +450,8 @@
     .score-weak { background: var(--accent-red-dim); color: var(--accent-red); border: 1px solid rgba(244, 63, 94, 0.35); }
 
     .strength-meter-bar {
-      width: 70px;
-      height: 4px;
+      width: 65px;
+      height: 3px;
       background: var(--bg-input);
       border-radius: 2px;
       overflow: hidden;
@@ -355,25 +472,25 @@
       background: var(--accent-green-dim);
       color: var(--accent-green);
       border: 1px solid rgba(16, 185, 129, 0.3);
-      padding: 3px 8px;
+      padding: 3px 7px;
       border-radius: 4px;
       font-weight: 800;
-      font-size: 11px;
+      font-size: 10.5px;
       display: inline-flex;
       align-items: center;
-      gap: 4px;
+      gap: 3px;
     }
     .badge-short {
       background: var(--accent-red-dim);
       color: var(--accent-red);
       border: 1px solid rgba(244, 63, 94, 0.3);
-      padding: 3px 8px;
+      padding: 3px 7px;
       border-radius: 4px;
       font-weight: 800;
-      font-size: 11px;
+      font-size: 10.5px;
       display: inline-flex;
       align-items: center;
-      gap: 4px;
+      gap: 3px;
     }
 
     /* STATUS BADGES */
@@ -382,14 +499,14 @@
       font-weight: 700;
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
     }
     .status-open::before {
       content: "";
-      width: 6px; height: 6px;
+      width: 5px; height: 5px;
       background: var(--accent-amber);
       border-radius: 50%;
-      box-shadow: 0 0 8px var(--accent-amber);
+      box-shadow: 0 0 7px var(--accent-amber);
       animation: pulse-dot 1.5s infinite;
     }
     @keyframes pulse-dot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.3; transform: scale(0.8); } }
@@ -397,13 +514,14 @@
     .status-tp { color: var(--accent-green); font-weight: 700; }
     .status-sl { color: var(--accent-red); font-weight: 700; }
 
-    /* ACTION BUTTONS IN TABLE */
+    /* ACTION BUTTONS */
     .btn-chart-link {
       color: var(--accent-cyan);
       text-decoration: none;
       font-size: 11px;
       font-weight: 600;
-      padding: 3px 7px;
+      padding: 4px 8px;
+      min-height: 28px;
       border-radius: 4px;
       background: var(--accent-cyan-dim);
       border: 1px solid rgba(0, 240, 255, 0.2);
@@ -418,72 +536,68 @@
     .bt-metrics-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
+      gap: 6px;
       margin-top: 10px;
     }
     .bt-metric {
       background: var(--bg-surface-elevated);
       border: 1px solid var(--border-subtle);
       border-radius: 6px;
-      padding: 8px;
+      padding: 7px;
       text-align: center;
     }
-    .bt-metric b { font-size: 14px; font-family: var(--font-mono); color: #ffffff; display: block; }
+    .bt-metric b { font-size: 13px; font-family: var(--font-mono); color: #ffffff; display: block; }
     .bt-metric small { font-size: 9px; color: var(--text-dim); text-transform: uppercase; }
 
-    /* TOAST / MODAL TOOLTIP */
+    /* TOAST */
     .toast-popup {
       position: fixed;
-      bottom: 24px;
-      right: 24px;
+      bottom: 20px;
+      right: 20px;
       background: var(--bg-surface-elevated);
       border: 1px solid var(--accent-cyan);
       border-radius: 8px;
-      padding: 12px 18px;
+      padding: 10px 16px;
       color: #ffffff;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
       z-index: 999;
       display: flex;
       align-items: center;
-      gap: 12px;
-      transform: translateY(120%);
+      gap: 10px;
+      transform: translateY(140%);
       transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      max-width: 90vw;
     }
     .toast-popup.visible { transform: translateY(0); }
   </style>
 </head>
-<body>
+<body class="view-cards">
 
   <div class="terminal-container">
 
-    <!-- MASTER TOP TERMINAL HEADER -->
+    <!-- MASTER TOP HEADER -->
     <header class="master-header">
       <div class="brand-section">
         <div class="brand-glyph">⬡</div>
         <div>
-          <div class="brand-title">PERP ROAMING <span>· 24/7 ALGO RADAR</span></div>
+          <div class="brand-title">PERP ROAMING <span>· ALGO RADAR</span></div>
           <div class="brand-subtitle">
-            EMA 11/34 Momentum Cross · Anchored VWAP Zone · EMA 200 Macro · ATR Multi-Tier Targets
+            EMA 11/34 Momentum · VWAP Zone · EMA 200 · Continuous All-Pairs Sweeper
           </div>
         </div>
       </div>
 
       <div class="header-controls">
-        <div style="display:flex; align-items:center; gap:6px; font-size:11px; color:var(--text-muted); padding:5px 10px; background:var(--bg-input); border:1px solid var(--border-subtle); border-radius:6px;">
-          <span style="width:7px; height:7px; border-radius:50%; background:var(--accent-green); box-shadow:0 0 6px var(--accent-green);"></span>
-          <span id="marketCoverageStatus">520+ Active Binance Pairs</span>
-        </div>
-
         <button id="toggleEngineBtn" class="btn-terminal action-pause" onclick="toggleEngine()">
-          <span>■</span> PAUSE SCANNER
+          <span>■</span> PAUSE
         </button>
 
         <button id="soundToggleBtn" class="btn-terminal" onclick="toggleSound()">
-          <span id="soundIcon">🔔</span> SOUND: ON
+          <span id="soundIcon">🔔</span> SOUND
         </button>
 
         <button class="btn-terminal" onclick="triggerImmediateSweep()">
-          <span>⚡</span> SWEEP NOW
+          <span>⚡</span> SWEEP
         </button>
 
         <div class="clock-display">
@@ -493,10 +607,23 @@
       </div>
     </header>
 
+    <!-- MOBILE NAVIGATION SEGMENTED SWITCHER (VISIBLE ON TABLETS/PHONES) -->
+    <nav class="mobile-tab-bar" id="mobileTabBar">
+      <button class="mobile-tab-btn active" id="mobTabFeed" onclick="switchMobileTab('feed')">
+        📡 Signals Feed
+      </button>
+      <button class="mobile-tab-btn" id="mobTabConfig" onclick="switchMobileTab('config')">
+        ⚙ Settings
+      </button>
+      <button class="mobile-tab-btn" id="mobTabBacktest" onclick="switchMobileTab('backtest')">
+        📊 Backtest
+      </button>
+    </nav>
+
     <!-- LIVE MARKET PULSE / TICKER TAPE -->
     <div class="ticker-bar" id="tickerBar">
       <span class="ticker-label">MARKET PULSE</span>
-      <div id="tickerChipsContainer" style="display:inline-flex; gap:8px;">
+      <div id="tickerChipsContainer" style="display:inline-flex; gap:6px;">
         <span style="color:var(--text-dim); font-size:11px;">Loading live Binance perpetual contracts...</span>
       </div>
     </div>
@@ -506,7 +633,7 @@
       <div class="kpi-card">
         <div class="kpi-title">Active Pairs Swept</div>
         <div class="kpi-val" id="kpiPairsCount" style="color:var(--accent-cyan);">--</div>
-        <div class="kpi-sub" id="kpiPairsSub">100% Dynamic Discovery</div>
+        <div class="kpi-sub" id="kpiPairsSub">Dynamic Binance Discovery</div>
         <div class="kpi-bar" style="background:var(--accent-cyan);"></div>
       </div>
 
@@ -550,18 +677,18 @@
     <div class="workspace-grid">
 
       <!-- LEFT SIDEBAR: CONTROLS & BACKTEST -->
-      <aside>
+      <aside class="workspace-sidebar" id="sidebarContainer">
         
-        <!-- SCANNER PARAMETERS -->
-        <div class="panel-card">
+        <!-- SCANNER PARAMETERS (SAVED TO MEMORY AUTOMATICALLY) -->
+        <div class="panel-card" id="configPanel">
           <div class="panel-header">
             <span class="panel-title">⚙ Scanner Configuration</span>
-            <span style="font-size:10px; color:var(--text-dim); font-family:var(--font-mono);">v2.8-LIVE</span>
+            <span class="saved-badge" id="settingsSavedBadge">✓ Memory Saved</span>
           </div>
 
           <div class="form-group">
             <label>Market Universe Scope</label>
-            <select class="form-select" id="marketScopeSelect" onchange="onMarketScopeChange()">
+            <select class="form-select" id="marketScopeSelect" onchange="onSettingChanged('marketScope')">
               <option value="all" selected>All Available Pairs (500+ Perpetual Futures)</option>
               <option value="top100">Top 100 Highest 24h Volume</option>
               <option value="top50">Top 50 Highest 24h Volume</option>
@@ -572,7 +699,7 @@
           <div class="form-row">
             <div class="form-group">
               <label>Timeframe</label>
-              <select class="form-select" id="tfSelect" onchange="onParamChange()">
+              <select class="form-select" id="tfSelect" onchange="onSettingChanged('timeframe')">
                 <option value="1m">1m Scalp</option>
                 <option value="3m">3m Fast</option>
                 <option value="5m" selected>5m Standard</option>
@@ -584,7 +711,7 @@
             </div>
             <div class="form-group">
               <label>Min Strength Score</label>
-              <select class="form-select" id="minScoreSelect" onchange="renderSignalsTable()">
+              <select class="form-select" id="minScoreSelect" onchange="onSettingChanged('minScore')">
                 <option value="0" selected>All (Any Score)</option>
                 <option value="60">≥ 60 (Moderate+)</option>
                 <option value="75">≥ 75 (Strong+)</option>
@@ -595,7 +722,7 @@
 
           <div class="form-group">
             <label>Trend Filter Architecture</label>
-            <select class="form-select" id="trendFilterSelect" onchange="onParamChange()">
+            <select class="form-select" id="trendFilterSelect" onchange="onSettingChanged('trendFilter')">
               <option value="zone" selected>VWAP vs EMA 200 Zone Alignment</option>
               <option value="price">Price above/below VWAP & EMA 200</option>
               <option value="none">Pure EMA 11/34 Cross (Unfiltered)</option>
@@ -605,17 +732,24 @@
           <div class="form-row">
             <div class="form-group">
               <label>SL × ATR Mult</label>
-              <input class="form-input" id="slMultInput" type="number" value="2.5" step="0.1" min="0.5" onchange="onParamChange()">
+              <input class="form-input" id="slMultInput" type="number" value="2.5" step="0.1" min="0.5" onchange="onSettingChanged('slMult')">
             </div>
             <div class="form-group">
               <label>TP1 × SL (RRR)</label>
-              <input class="form-input" id="tpRatioInput" type="number" value="1.5" step="0.1" min="0.5" onchange="onParamChange()">
+              <input class="form-input" id="tpRatioInput" type="number" value="1.5" step="0.1" min="0.5" onchange="onSettingChanged('tpRatio')">
             </div>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
+            <button class="btn-terminal" style="font-size:10px; padding:4px 8px; min-height:28px;" onclick="resetSettingsToDefaults()">
+              ↺ Reset to Defaults
+            </button>
+            <span style="font-size:10px; color:var(--text-dim);">Auto-persisted in browser</span>
           </div>
 
           <!-- RADAR STATUS & SWEEP INDICATOR -->
           <div class="radar-box">
-            <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; font-size:10.5px;">
               <span style="font-weight:700; color:var(--text-main);">Continuous Sweep Engine</span>
               <span id="sweepCycleText" style="color:var(--accent-cyan); font-family:var(--font-mono);">Cycle #1</span>
             </div>
@@ -629,7 +763,7 @@
         </div>
 
         <!-- HISTORICAL BACKTESTING ENGINE -->
-        <div class="panel-card">
+        <div class="panel-card" id="backtestPanel">
           <div class="panel-header">
             <span class="panel-title">📊 Historical Strategy Backtest</span>
             <span style="font-size:10px; color:var(--accent-cyan); font-family:var(--font-mono);" id="btTotalPairsAvailable">500+ Pairs</span>
@@ -638,15 +772,15 @@
           <div class="form-group">
             <label>Search & Select Pair</label>
             <input class="form-input" id="btPairSearchInput" placeholder="Filter symbol (e.g. SOL, PEPE, SUI)..." oninput="filterBtPairOptions(this.value)" style="margin-bottom:6px;">
-            <select class="form-select" id="btPairSelect">
+            <select class="form-select" id="btPairSelect" onchange="onSettingChanged('btPair')">
               <option value="BTCUSDT">BTCUSDT</option>
             </select>
           </div>
 
           <div class="form-row">
             <div class="form-group">
-              <label>Backtest Timeframe</label>
-              <select class="form-select" id="btTfSelect">
+              <label>Timeframe</label>
+              <select class="form-select" id="btTfSelect" onchange="onSettingChanged('btTf')">
                 <option value="1m">1m</option>
                 <option value="3m">3m</option>
                 <option value="5m" selected>5m</option>
@@ -656,7 +790,7 @@
             </div>
             <div class="form-group">
               <label>Candle Lookback</label>
-              <input class="form-input" id="btBarsInput" type="number" value="500" min="200" max="1000">
+              <input class="form-input" id="btBarsInput" type="number" value="500" min="200" max="1000" onchange="onSettingChanged('btBars')">
             </div>
           </div>
 
@@ -665,23 +799,23 @@
           </button>
 
           <!-- BACKTEST RESULTS -->
-          <div id="btResultContainer" style="display:none; margin-top:12px;">
+          <div id="btResultContainer" style="display:none; margin-top:10px;">
             <div class="bt-metrics-grid">
-              <div class="bt-metric"><b id="btTotalTrades">0</b><small>Total Trades</small></div>
+              <div class="bt-metric"><b id="btTotalTrades">0</b><small>Trades</small></div>
               <div class="bt-metric"><b id="btWinRate" style="color:var(--accent-green);">0%</b><small>Win Rate</small></div>
-              <div class="bt-metric"><b id="btAvgStrength" style="color:var(--accent-cyan);">--</b><small>Avg Strength</small></div>
+              <div class="bt-metric"><b id="btAvgStrength" style="color:var(--accent-cyan);">--</b><small>Strength</small></div>
               <div class="bt-metric"><b id="btProfitFactor" style="color:var(--accent-green);">0.0</b><small>Profit Factor</small></div>
               <div class="bt-metric"><b id="btTp1Hits">0</b><small>TP1 Hits</small></div>
               <div class="bt-metric"><b id="btSlHits" style="color:var(--accent-red);">0</b><small>SL Hits</small></div>
             </div>
-            <div id="btSummaryNarrative" style="font-size:11px; color:var(--text-muted); margin-top:8px; line-height:1.4;"></div>
+            <div id="btSummaryNarrative" style="font-size:10.5px; color:var(--text-muted); margin-top:8px; line-height:1.4;"></div>
           </div>
         </div>
 
         <!-- OPTIONAL CLOUD BACKEND CONNECTION -->
-        <div class="panel-card" style="padding:12px;">
+        <div class="panel-card" style="padding:10px;">
           <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="toggleCloudConfig()">
-            <span style="font-size:11px; font-weight:700; color:var(--text-dim); text-transform:uppercase;">Cloud Backend Sync (Optional)</span>
+            <span style="font-size:10.5px; font-weight:700; color:var(--text-dim); text-transform:uppercase;">Cloud Backend Sync (Optional)</span>
             <span id="cloudToggleArrow" style="font-size:10px; color:var(--text-dim);">▼</span>
           </div>
           <div id="cloudConfigDrawer" style="display:none; margin-top:10px;">
@@ -691,7 +825,7 @@
             </div>
             <div style="display:flex; gap:6px;">
               <button class="btn-terminal" style="flex:1; justify-content:center;" onclick="saveCustomApiBase()">Save & Connect</button>
-              <button class="btn-terminal" style="justify-content:center;" onclick="resetToBrowserOnly()">Reset (Browser Only)</button>
+              <button class="btn-terminal" style="justify-content:center;" onclick="resetToBrowserOnly()">Reset (Browser)</button>
             </div>
           </div>
         </div>
@@ -699,35 +833,40 @@
       </aside>
 
       <!-- RIGHT MAIN VIEWPORT: SIGNALS FEED -->
-      <main class="feed-container">
+      <main class="feed-container workspace-main mobile-active" id="mainFeedContainer">
         
         <!-- FEED TOOLBAR & FILTERS -->
         <div class="feed-toolbar">
           <div class="filter-tabs">
-            <button class="tab-btn active" id="tabAll" onclick="setFeedFilter('ALL')">All Signals (<span id="countTabAll">0</span>)</button>
-            <button class="tab-btn" id="tabOpen" onclick="setFeedFilter('OPEN')">Active Radar (<span id="countTabOpen">0</span>)</button>
-            <button class="tab-btn" id="tabWins" onclick="setFeedFilter('WINS')">Take Profits (<span id="countTabWins">0</span>)</button>
-            <button class="tab-btn" id="tabLosses" onclick="setFeedFilter('LOSSES')">Stop Losses (<span id="countTabLosses">0</span>)</button>
-            <button class="tab-btn" id="tabUltra" onclick="setFeedFilter('ULTRA')">Ultra Score (≥80)</button>
+            <button class="tab-btn active" id="tabAll" onclick="setFeedFilter('ALL')">All (<span id="countTabAll">0</span>)</button>
+            <button class="tab-btn" id="tabOpen" onclick="setFeedFilter('OPEN')">Active (<span id="countTabOpen">0</span>)</button>
+            <button class="tab-btn" id="tabWins" onclick="setFeedFilter('WINS')">TP Hits (<span id="countTabWins">0</span>)</button>
+            <button class="tab-btn" id="tabLosses" onclick="setFeedFilter('LOSSES')">SL Hits (<span id="countTabLosses">0</span>)</button>
+            <button class="tab-btn" id="tabUltra" onclick="setFeedFilter('ULTRA')">≥80 Score</button>
           </div>
 
-          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
             <div class="search-input-box">
-              <span style="color:var(--text-dim);">🔍</span>
-              <input id="symbolSearchInput" placeholder="Filter symbol..." oninput="renderSignalsTable()">
+              <span style="color:var(--text-dim); font-size:11px;">🔍</span>
+              <input id="symbolSearchInput" placeholder="Filter pair..." oninput="renderSignalsTable()">
             </div>
 
+            <!-- VIEW MODE TOGGLE (TABLE / CARDS ON MOBILE) -->
+            <button class="btn-terminal signals-table-view-toggle" id="viewModeToggleBtn" onclick="toggleFeedViewMode()" title="Toggle Table/Card Layout">
+              <span id="viewModeIcon">▦</span> <span id="viewModeLabel">Cards</span>
+            </button>
+
             <button class="btn-terminal" onclick="exportSignalsCsv()" title="Download CSV report">
-              <span>📥</span> Export CSV
+              <span>📥</span> CSV
             </button>
 
             <button class="btn-terminal" onclick="clearSignalsLog()" title="Clear signal history" style="color:var(--accent-red);">
-              <span>🗑</span> Clear
+              <span>🗑</span>
             </button>
           </div>
         </div>
 
-        <!-- REALTIME SIGNALS TABLE -->
+        <!-- DESKTOP / TABLET DATA TABLE -->
         <div class="table-wrapper">
           <table class="signals-table">
             <thead>
@@ -735,26 +874,29 @@
                 <th>Time (UTC)</th>
                 <th>Pair</th>
                 <th>Direction</th>
-                <th>Signal Strength (0-100)</th>
+                <th>Strength Score</th>
                 <th>Entry Price</th>
-                <th>Current / Live PnL</th>
-                <th>Stop Loss (SL)</th>
-                <th>Take Profit 1 (1.5R)</th>
-                <th>Take Profit 2 (3.0R)</th>
+                <th>Live / PnL</th>
+                <th>Stop Loss</th>
+                <th>Take Profit 1</th>
+                <th>Take Profit 2</th>
                 <th>Status</th>
                 <th>Chart</th>
               </tr>
             </thead>
             <tbody id="signalsTableBody">
               <tr>
-                <td colspan="11" style="text-align:center; padding:40px; color:var(--text-dim);">
-                  <div style="font-size:16px; margin-bottom:8px;">📡 Continuous Sweep Engine Running</div>
+                <td colspan="11" style="text-align:center; padding:35px; color:var(--text-dim);">
+                  <div style="font-size:15px; margin-bottom:6px;">📡 Continuous Sweep Engine Running</div>
                   Scanning all active Binance Perpetual Futures pairs... Real-time signals with quantitative strength scores will appear here.
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
+
+        <!-- MOBILE RESPONSIVE CARDS CONTAINER -->
+        <div class="signals-cards-grid" id="signalsCardsContainer"></div>
 
       </main>
 
@@ -764,20 +906,195 @@
 
   <!-- FLOATING TOAST NOTIFICATION -->
   <div class="toast-popup" id="toastNotification">
-    <span style="font-size:20px;" id="toastIcon">🚀</span>
+    <span style="font-size:18px;" id="toastIcon">🚀</span>
     <div>
       <b id="toastTitle">New Algorithmic Signal</b>
-      <div id="toastBody" style="font-size:11px; color:var(--text-muted);">BTCUSDT Long generated with 92/100 strength</div>
+      <div id="toastBody" style="font-size:10.5px; color:var(--text-muted);">BTCUSDT Long generated with 92/100 strength</div>
     </div>
   </div>
 
-  <!-- APPLICATION LOGIC -->
+  <!-- APPLICATION LOGIC & SETTINGS MEMORY MANAGER -->
   <script>
+    // ==========================================
+    // SETTINGS PERSISTENCE MANAGER (MEMORY IN LOCALSTORAGE)
+    // ==========================================
+    const $ = id => document.getElementById(id);
+    const SETTINGS_KEY = 'perp_roaming_user_settings_v2';
+
+    const defaultSettings = {
+      marketScope: 'all',
+      timeframe: '5m',
+      minScore: 0,
+      trendFilter: 'zone',
+      slMult: 2.5,
+      tpRatio: 1.5,
+      soundEnabled: true,
+      feedFilter: 'ALL',
+      viewMode: 'cards', // 'cards' or 'table' on mobile
+      mobileTab: 'feed', // 'feed', 'config', 'backtest'
+      btPair: 'BTCUSDT',
+      btTf: '5m',
+      btBars: 500,
+      customApiBase: ''
+    };
+
+    function loadSavedSettings() {
+      try {
+        const stored = localStorage.getItem(SETTINGS_KEY);
+        if (!stored) return { ...defaultSettings };
+        return { ...defaultSettings, ...JSON.parse(stored) };
+      } catch (e) {
+        return { ...defaultSettings };
+      }
+    }
+
+    let userSettings = loadSavedSettings();
+
+    function saveSettingsToMemory() {
+      try {
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify(userSettings));
+        flashSavedBadge();
+      } catch (e) {}
+    }
+
+    let savedBadgeTimeout = null;
+    function flashSavedBadge() {
+      const badge = $('settingsSavedBadge');
+      if (!badge) return;
+      badge.classList.add('visible');
+      if (savedBadgeTimeout) clearTimeout(savedBadgeTimeout);
+      savedBadgeTimeout = setTimeout(() => {
+        badge.classList.remove('visible');
+      }, 1800);
+    }
+
+    function onSettingChanged(key) {
+      if (key === 'marketScope') {
+        userSettings.marketScope = $('marketScopeSelect').value;
+        applyMarketScope();
+      } else if (key === 'timeframe') {
+        userSettings.timeframe = $('tfSelect').value;
+        currentScanIndex = 0;
+      } else if (key === 'minScore') {
+        userSettings.minScore = parseInt($('minScoreSelect').value) || 0;
+        renderSignalsTable();
+      } else if (key === 'trendFilter') {
+        userSettings.trendFilter = $('trendFilterSelect').value;
+        currentScanIndex = 0;
+      } else if (key === 'slMult') {
+        userSettings.slMult = parseFloat($('slMultInput').value) || 2.5;
+      } else if (key === 'tpRatio') {
+        userSettings.tpRatio = parseFloat($('tpRatioInput').value) || 1.5;
+      } else if (key === 'btPair') {
+        userSettings.btPair = $('btPairSelect').value;
+      } else if (key === 'btTf') {
+        userSettings.btTf = $('btTfSelect').value;
+      } else if (key === 'btBars') {
+        userSettings.btBars = parseInt($('btBarsInput').value) || 500;
+      }
+      saveSettingsToMemory();
+    }
+
+    function applySettingsToInputs() {
+      if ($('marketScopeSelect')) $('marketScopeSelect').value = userSettings.marketScope;
+      if ($('tfSelect')) $('tfSelect').value = userSettings.timeframe;
+      if ($('minScoreSelect')) $('minScoreSelect').value = userSettings.minScore;
+      if ($('trendFilterSelect')) $('trendFilterSelect').value = userSettings.trendFilter;
+      if ($('slMultInput')) $('slMultInput').value = userSettings.slMult;
+      if ($('tpRatioInput')) $('tpRatioInput').value = userSettings.tpRatio;
+      if ($('btTfSelect')) $('btTfSelect').value = userSettings.btTf;
+      if ($('btBarsInput')) $('btBarsInput').value = userSettings.btBars;
+      if ($('customApiBaseInput') && userSettings.customApiBase) $('customApiBaseInput').value = userSettings.customApiBase;
+
+      // Sound
+      isSoundEnabled = userSettings.soundEnabled !== false;
+      updateSoundButtonUI();
+
+      // View mode
+      applyViewModeUI(userSettings.viewMode || 'cards');
+
+      // Filter
+      currentFilter = userSettings.feedFilter || 'ALL';
+      updateFilterTabsUI();
+    }
+
+    function resetSettingsToDefaults() {
+      if (confirm('Reset all parameters to factory defaults?')) {
+        userSettings = { ...defaultSettings };
+        saveSettingsToMemory();
+        applySettingsToInputs();
+        applyMarketScope();
+        renderSignalsTable();
+      }
+    }
+
+    // ==========================================
+    // RESPONSIVE VIEW MODES & MOBILE TABS
+    // ==========================================
+    function switchMobileTab(tab) {
+      userSettings.mobileTab = tab;
+      saveSettingsToMemory();
+
+      const tabs = ['mobTabFeed', 'mobTabConfig', 'mobTabBacktest'];
+      tabs.forEach(t => $(t)?.classList.remove('active'));
+
+      const sidebar = $('sidebarContainer');
+      const mainFeed = $('mainFeedContainer');
+      const configPanel = $('configPanel');
+      const backtestPanel = $('backtestPanel');
+
+      if (tab === 'feed') {
+        $('mobTabFeed')?.classList.add('active');
+        sidebar?.classList.remove('mobile-active');
+        mainFeed?.classList.add('mobile-active');
+      } else if (tab === 'config') {
+        $('mobTabConfig')?.classList.add('active');
+        sidebar?.classList.add('mobile-active');
+        mainFeed?.classList.remove('mobile-active');
+        configPanel.style.display = 'block';
+        backtestPanel.style.display = 'none';
+      } else if (tab === 'backtest') {
+        $('mobTabBacktest')?.classList.add('active');
+        sidebar?.classList.add('mobile-active');
+        mainFeed?.classList.remove('mobile-active');
+        configPanel.style.display = 'none';
+        backtestPanel.style.display = 'block';
+      }
+    }
+
+    function toggleFeedViewMode() {
+      const newMode = (userSettings.viewMode === 'table') ? 'cards' : 'table';
+      userSettings.viewMode = newMode;
+      saveSettingsToMemory();
+      applyViewModeUI(newMode);
+    }
+
+    function applyViewModeUI(mode) {
+      if (mode === 'cards') {
+        document.body.classList.remove('view-table');
+        document.body.classList.add('view-cards');
+        $('viewModeIcon').textContent = '▤';
+        $('viewModeLabel').textContent = 'Table';
+      } else {
+        document.body.classList.remove('view-cards');
+        document.body.classList.add('view-table');
+        $('viewModeIcon').textContent = '▦';
+        $('viewModeLabel').textContent = 'Cards';
+      }
+    }
+
+    function updateFilterTabsUI() {
+      ['tabAll', 'tabOpen', 'tabWins', 'tabLosses', 'tabUltra'].forEach(t => $(t)?.classList.remove('active'));
+      if (currentFilter === 'ALL') $('tabAll')?.classList.add('active');
+      else if (currentFilter === 'OPEN') $('tabOpen')?.classList.add('active');
+      else if (currentFilter === 'WINS') $('tabWins')?.classList.add('active');
+      else if (currentFilter === 'LOSSES') $('tabLosses')?.classList.add('active');
+      else if (currentFilter === 'ULTRA') $('tabUltra')?.classList.add('active');
+    }
+
     // ==========================================
     // STATE & CONFIGURATION
     // ==========================================
-    const $ = id => document.getElementById(id);
-
     let allAvailablePairs = [];
     let activeScanList = [];
     let currentScanIndex = 0;
@@ -788,10 +1105,9 @@
     let currentFilter = 'ALL';
     let localSignals = JSON.parse(localStorage.getItem('perp_roaming_signals') || '[]');
     let marketTickersCache = {};
-    let customApiBase = localStorage.getItem('perp_roaming_api_base') || '';
 
     // ==========================================
-    // AUDIO SYNTHESIS ENGINE (CLEAN WEB AUDIO API)
+    // AUDIO SYNTHESIS ENGINE
     // ==========================================
     let audioCtx = null;
     function playSignalAlertChime(direction, score) {
@@ -805,8 +1121,7 @@
         const osc2 = audioCtx.createOscillator();
         const gainNode = audioCtx.createGain();
 
-        // Frequency pitch based on direction
-        const baseFreq = direction === 'LONG' ? 587.33 : 440.0; // D5 for long, A4 for short
+        const baseFreq = direction === 'LONG' ? 587.33 : 440.0;
         osc1.frequency.setValueAtTime(baseFreq, now);
         osc1.frequency.exponentialRampToValueAtTime(baseFreq * 1.5, now + 0.15);
 
@@ -828,7 +1143,7 @@
     }
 
     // ==========================================
-    // REALTIME QUANTITATIVE SIGNAL STRENGTH ENGINE
+    // REALTIME QUANTITATIVE SIGNAL STRENGTH
     // ==========================================
     function calculateSignalStrength(candles, ind, index, direction, vwap) {
       const c = candles[index];
@@ -845,7 +1160,7 @@
       let momScore = Math.min(18, Math.round(spreadRatio * 16));
       const prevSpread = Math.abs(prevInd.e11 - prevInd.e34);
       if (emaSpread > prevSpread) {
-        momScore += 7; // Expanding velocity
+        momScore += 7;
       } else {
         momScore += 3;
       }
@@ -1034,7 +1349,6 @@
 
         $('kpiPairsCount').textContent = allAvailablePairs.length;
         $('btTotalPairsAvailable').textContent = `${allAvailablePairs.length} Pairs Available`;
-        $('marketCoverageStatus').textContent = `${allAvailablePairs.length} Active Binance Pairs`;
 
         populateBtPairOptions(allAvailablePairs);
         applyMarketScope();
@@ -1045,7 +1359,6 @@
 
       } catch (err) {
         console.error('exchangeInfo fallback:', err);
-        // Fallback majors
         allAvailablePairs = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT', 'DOGEUSDT', 'SUIUSDT', 'PEPEUSDT', 'ADAUSDT', 'AVAXUSDT', 'LINKUSDT', 'NEARUSDT'];
         populateBtPairOptions(allAvailablePairs);
         applyMarketScope();
@@ -1056,11 +1369,12 @@
     function populateBtPairOptions(pairs) {
       const select = $('btPairSelect');
       select.innerHTML = '';
+      const savedPair = userSettings.btPair || 'BTCUSDT';
       pairs.forEach(p => {
         const opt = document.createElement('option');
         opt.value = p;
         opt.textContent = p;
-        if (p === 'BTCUSDT') opt.selected = true;
+        if (p === savedPair) opt.selected = true;
         select.appendChild(opt);
       });
     }
@@ -1081,7 +1395,6 @@
           .filter(t => t.symbol.endsWith('USDT'))
           .sort((a, b) => parseFloat(b.quoteVolume) - parseFloat(a.quoteVolume));
 
-        // Store cache
         usdtTickers.forEach(t => {
           marketTickersCache[t.symbol] = {
             price: parseFloat(t.lastPrice),
@@ -1090,7 +1403,6 @@
           };
         });
 
-        // Render top 12 movers
         const topMovers = usdtTickers.slice(0, 14);
         let html = '';
         topMovers.forEach(t => {
@@ -1112,11 +1424,14 @@
 
     function quickSelectPair(symbol) {
       $('btPairSelect').value = symbol;
+      userSettings.btPair = symbol;
+      saveSettingsToMemory();
+      switchMobileTab('backtest');
       runHistoricalBacktest();
     }
 
     function applyMarketScope() {
-      const scope = $('marketScopeSelect').value;
+      const scope = userSettings.marketScope || 'all';
       if (scope === 'top20') {
         activeScanList = allAvailablePairs.slice(0, 20);
       } else if (scope === 'top50') {
@@ -1128,12 +1443,6 @@
       }
       $('kpiPairsCount').textContent = activeScanList.length;
       currentScanIndex = 0;
-    }
-
-    function onMarketScopeChange() {
-      applyMarketScope();
-      currentCycleNumber = 1;
-      $('radarStatusText').textContent = `Scope updated: sweeping ${activeScanList.length} pairs continuously...`;
     }
 
     // ==========================================
@@ -1149,17 +1458,16 @@
           continue;
         }
 
-        const tf = $('tfSelect').value;
-        const trendMode = $('trendFilterSelect').value;
-        const slMult = parseFloat($('slMultInput').value) || 2.5;
-        const tpRatio = parseFloat($('tpRatioInput').value) || 1.5;
+        const tf = userSettings.timeframe || '5m';
+        const trendMode = userSettings.trendFilter || 'zone';
+        const slMult = userSettings.slMult || 2.5;
+        const tpRatio = userSettings.tpRatio || 1.5;
 
         const total = activeScanList.length;
         const batchSize = 6;
         const batch = activeScanList.slice(currentScanIndex, currentScanIndex + batchSize);
 
         if (!batch.length) {
-          // Completed full pass across all pairs
           currentCycleNumber++;
           currentScanIndex = 0;
           $('kpiCycle').textContent = `#${currentCycleNumber}`;
@@ -1172,7 +1480,6 @@
           continue;
         }
 
-        // Process batch in parallel
         await Promise.all(batch.map(async sym => {
           try {
             const url = `https://fapi.binance.com/fapi/v1/klines?symbol=${sym}&interval=${tf}&limit=120`;
@@ -1189,16 +1496,14 @@
             }));
             if (candles.length < 50) return;
 
-            // Cache current price
             const currentCandle = candles[candles.length - 1];
             marketTickersCache[sym] = marketTickersCache[sym] || {};
             marketTickersCache[sym].price = currentCandle.c;
 
             const ind = calcIndicators(candles, 14);
-            const lastIdx = candles.length - 2; // last confirmed closed bar
+            const lastIdx = candles.length - 2;
             const lastClosed = candles[lastIdx];
 
-            // Evaluate signal
             const sig = evaluateSignalBar(candles, ind, lastIdx, trendMode, true);
 
             if (sig) {
@@ -1212,7 +1517,6 @@
               const tp2Price = sig.direction === 'LONG' ? entry + tpDist * 2 : entry - tpDist * 2;
               const tp3Price = sig.direction === 'LONG' ? entry + tpDist * 3 : entry - tpDist * 3;
 
-              // Check deduplication (prevent firing on same bar)
               const existingRecent = localSignals.find(s => s.symbol === sym && s.barTime === lastClosed.t);
 
               if (!existingRecent) {
@@ -1249,7 +1553,6 @@
               }
             }
 
-            // Continuous trade settlement for open signals
             settleOpenSignals(sym, currentCandle);
 
           } catch (e) {}
@@ -1298,14 +1601,14 @@
     }
 
     // ==========================================
-    // UI RENDERING: SIGNALS TABLE & KPIS
+    // UI RENDERING: SIGNALS TABLE & CARDS
     // ==========================================
     function renderSignalsTable() {
       const tbody = $('signalsTableBody');
-      const minScore = parseInt($('minScoreSelect').value) || 0;
+      const cardsContainer = $('signalsCardsContainer');
+      const minScore = userSettings.minScore || 0;
       const search = ($('symbolSearchInput').value || '').trim().toUpperCase();
 
-      // Counts for tabs
       const countAll = localSignals.length;
       const countOpen = localSignals.filter(s => s.status === 'OPEN').length;
       const countWins = localSignals.filter(s => s.status.includes('TP')).length;
@@ -1330,33 +1633,37 @@
       if (!filtered.length) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="11" style="text-align:center; padding:40px; color:var(--text-dim);">
+            <td colspan="11" style="text-align:center; padding:35px; color:var(--text-dim);">
               No signals match the current filter (${currentFilter}) or score threshold (≥${minScore}).
             </td>
           </tr>
         `;
+        cardsContainer.innerHTML = `
+          <div style="text-align:center; padding:35px; color:var(--text-dim); background:var(--bg-surface-elevated); border-radius:8px;">
+            No signals match the current filter (${currentFilter}) or score threshold (≥${minScore}).
+          </div>
+        `;
         return;
       }
 
-      let html = '';
+      let tableHtml = '';
+      let cardsHtml = '';
+
       for (const s of filtered) {
         const isLong = s.direction === 'LONG';
         const score = s.strengthScore || 75;
         const bk = s.breakdown || { momentum: 18, vwap: 16, trend: 16, volume: 14, conviction: 11 };
         
-        // Strength badge class
         let scoreClass = 'score-moderate';
         if (score >= 85) scoreClass = 'score-ultra';
         else if (score >= 70) scoreClass = 'score-strong';
         else if (score < 55) scoreClass = 'score-weak';
 
-        // Status badge class
         let statusHtml = `<span class="status-open">OPEN</span>`;
         if (s.status.includes('TP2')) statusHtml = `<span class="status-tp">TP2 HIT 🚀</span>`;
         else if (s.status.includes('TP1')) statusHtml = `<span class="status-tp">TP1 HIT 🎯</span>`;
         else if (s.status.includes('SL')) statusHtml = `<span class="status-sl">SL HIT ⛔</span>`;
 
-        // Live price & PnL
         const livePrice = s.currentPrice || marketTickersCache[s.symbol]?.price || s.entryPrice;
         let pnlPct = 0;
         if (s.entryPrice > 0) {
@@ -1367,7 +1674,8 @@
         const timeStr = s.createdAt ? s.createdAt.slice(11, 19) : '--:--:--';
         const binanceUrl = `https://www.binance.com/en/futures/${s.symbol}`;
 
-        html += `
+        // Table Row HTML
+        tableHtml += `
           <tr>
             <td style="font-family:var(--font-mono); color:var(--text-muted);">${timeStr}</td>
             <td>
@@ -1393,7 +1701,7 @@
             <td style="font-family:var(--font-mono);"><b>${fmtPrice(s.entryPrice)}</b></td>
             <td style="font-family:var(--font-mono); ${pnlClass}">
               <b>${fmtPrice(livePrice)}</b>
-              <span style="font-size:10px; margin-left:4px;">(${pnlPct >= 0 ? '+' : ''}${pnlPct.toFixed(2)}%)</span>
+              <span style="font-size:10px; margin-left:3px;">(${pnlPct >= 0 ? '+' : ''}${pnlPct.toFixed(2)}%)</span>
             </td>
             <td style="font-family:var(--font-mono); color:var(--accent-red);">${fmtPrice(s.slPrice)}</td>
             <td style="font-family:var(--font-mono); color:var(--accent-green);">${fmtPrice(s.tp1Price)}</td>
@@ -1406,8 +1714,62 @@
             </td>
           </tr>
         `;
+
+        // Responsive Mobile Card HTML
+        cardsHtml += `
+          <div class="signal-mobile-card">
+            <div class="card-top-row">
+              <div class="card-pair-badge">
+                <span>${s.symbol}</span>
+                <span class="${isLong ? 'badge-long' : 'badge-short'}">${isLong ? '▲ LONG' : '▼ SHORT'}</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-family:var(--font-mono); font-size:10px; color:var(--text-dim);">${timeStr}</span>
+                <span class="strength-badge ${scoreClass}">${score}/100</span>
+              </div>
+            </div>
+
+            <div class="card-grid-data">
+              <div class="card-data-cell">
+                <small>Entry</small>
+                <b>${fmtPrice(s.entryPrice)}</b>
+              </div>
+              <div class="card-data-cell">
+                <small>Live PnL</small>
+                <b style="${pnlClass}">${pnlPct >= 0 ? '+' : ''}${pnlPct.toFixed(2)}%</b>
+              </div>
+              <div class="card-data-cell">
+                <small>Status</small>
+                <b>${statusHtml}</b>
+              </div>
+              <div class="card-data-cell">
+                <small>Stop Loss</small>
+                <b style="color:var(--accent-red);">${fmtPrice(s.slPrice)}</b>
+              </div>
+              <div class="card-data-cell">
+                <small>Take Profit 1</small>
+                <b style="color:var(--accent-green);">${fmtPrice(s.tp1Price)}</b>
+              </div>
+              <div class="card-data-cell">
+                <small>Take Profit 2</small>
+                <b style="color:var(--accent-cyan);">${fmtPrice(s.tp2Price)}</b>
+              </div>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:9.5px; color:var(--text-dim); font-family:var(--font-mono);">
+                Mom ${bk.momentum} · VWAP ${bk.vwap} · Vol ${bk.volume}
+              </span>
+              <a href="${binanceUrl}" target="_blank" rel="noopener noreferrer" class="btn-chart-link" style="padding:4px 10px;">
+                Binance Chart ↗
+              </a>
+            </div>
+          </div>
+        `;
       }
-      tbody.innerHTML = html;
+
+      tbody.innerHTML = tableHtml;
+      cardsContainer.innerHTML = cardsHtml;
     }
 
     function updateCockpitKpis() {
@@ -1436,12 +1798,9 @@
 
     function setFeedFilter(filter) {
       currentFilter = filter;
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      if (filter === 'ALL') $('tabAll').classList.add('active');
-      else if (filter === 'OPEN') $('tabOpen').classList.add('active');
-      else if (filter === 'WINS') $('tabWins').classList.add('active');
-      else if (filter === 'LOSSES') $('tabLosses').classList.add('active');
-      else if (filter === 'ULTRA') $('tabUltra').classList.add('active');
+      userSettings.feedFilter = filter;
+      saveSettingsToMemory();
+      updateFilterTabsUI();
       renderSignalsTable();
     }
 
@@ -1450,11 +1809,11 @@
     // ==========================================
     async function runHistoricalBacktest() {
       const sym = $('btPairSelect').value || 'BTCUSDT';
-      const tf = $('btTfSelect').value || '5m';
-      const bars = parseInt($('btBarsInput').value) || 500;
-      const slMult = parseFloat($('slMultInput').value) || 2.5;
-      const tpRatio = parseFloat($('tpRatioInput').value) || 1.5;
-      const trendMode = $('trendFilterSelect').value;
+      const tf = userSettings.btTf || '5m';
+      const bars = userSettings.btBars || 500;
+      const slMult = userSettings.slMult || 2.5;
+      const tpRatio = userSettings.tpRatio || 1.5;
+      const trendMode = userSettings.trendFilter || 'zone';
 
       $('btResultContainer').style.display = 'block';
       $('btSummaryNarrative').textContent = `Fetching ${bars} historical candles for ${sym}...`;
@@ -1479,7 +1838,6 @@
         for (let i = 40; i < candles.length - 1; i++) {
           const c = candles[i];
 
-          // Settle active trade
           if (inTrade) {
             const isLong = inTrade.dir === 'LONG';
             const hitSL = isLong ? c.l <= inTrade.sl : c.h >= inTrade.sl;
@@ -1502,7 +1860,6 @@
             }
           }
 
-          // Evaluate entry
           if (!inTrade) {
             const sig = evaluateSignalBar(candles, ind, i, trendMode, true);
             if (sig) {
@@ -1545,7 +1902,7 @@
         $('btSlHits').textContent = losses;
 
         $('btSummaryNarrative').innerHTML = `
-          <b>${sym} (${tf}) Simulation Complete:</b> Tested ${bars} candles. Yielded <b>${completed} setups</b> with <b>${wr}% win rate</b> and <b>${profitFactor} Profit Factor</b> (Avg Strength Score: <b>${avgStrength}/100</b>).
+          <b>${sym} (${tf}) Simulation:</b> ${bars} candles yielded <b>${completed} setups</b> with <b>${wr}% win rate</b> and <b>${profitFactor} Profit Factor</b> (Avg Strength: <b>${avgStrength}/100</b>).
         `;
 
       } catch (err) {
@@ -1554,7 +1911,7 @@
     }
 
     // ==========================================
-    // TOAST NOTIFICATIONS & CONTROLS
+    // NOTIFICATIONS & CONTROLS
     // ==========================================
     let toastTimeout = null;
     function showToastNotification(sig) {
@@ -1575,11 +1932,11 @@
       isRunning = !isRunning;
       const btn = $('toggleEngineBtn');
       if (isRunning) {
-        btn.innerHTML = '<span>■</span> PAUSE SCANNER';
+        btn.innerHTML = '<span>■</span> PAUSE';
         btn.className = 'btn-terminal action-pause';
         $('radarStatusText').textContent = 'Scanner resumed continuous loop...';
       } else {
-        btn.innerHTML = '<span>▶</span> RESUME SCANNER';
+        btn.innerHTML = '<span>▶</span> RESUME';
         btn.className = 'btn-terminal action-run';
         $('radarStatusText').textContent = 'Scanner paused by user.';
       }
@@ -1587,17 +1944,19 @@
 
     function toggleSound() {
       isSoundEnabled = !isSoundEnabled;
+      userSettings.soundEnabled = isSoundEnabled;
+      saveSettingsToMemory();
+      updateSoundButtonUI();
+    }
+
+    function updateSoundButtonUI() {
       $('soundIcon').textContent = isSoundEnabled ? '🔔' : '🔕';
-      $('soundToggleBtn').innerHTML = `<span>${isSoundEnabled ? '🔔' : '🔕'}</span> SOUND: ${isSoundEnabled ? 'ON' : 'MUTED'}`;
+      $('soundToggleBtn').innerHTML = `<span id="soundIcon">${isSoundEnabled ? '🔔' : '🔕'}</span> ${isSoundEnabled ? 'SOUND' : 'MUTED'}`;
     }
 
     function triggerImmediateSweep() {
       currentScanIndex = 0;
       $('radarStatusText').textContent = '⚡ Immediate full sweep cycle restarted!';
-    }
-
-    function onParamChange() {
-      currentScanIndex = 0;
     }
 
     function toggleCloudConfig() {
@@ -1610,15 +1969,15 @@
 
     function saveCustomApiBase() {
       const val = ($('customApiBaseInput').value || '').trim();
-      customApiBase = val;
-      localStorage.setItem('perp_roaming_api_base', val);
+      userSettings.customApiBase = val;
+      saveSettingsToMemory();
       alert(val ? `Saved cloud backend: ${val}` : 'Cloud backend cleared. Using browser-native live scanning.');
     }
 
     function resetToBrowserOnly() {
-      customApiBase = '';
+      userSettings.customApiBase = '';
       $('customApiBaseInput').value = '';
-      localStorage.removeItem('perp_roaming_api_base');
+      saveSettingsToMemory();
       alert('Switched to 100% In-Browser autonomous execution.');
     }
 
@@ -1674,10 +2033,16 @@
     setInterval(updateClock, 1000);
     updateClock();
 
-    // Initial setup
+    // Initial setup from memory
+    applySettingsToInputs();
     renderSignalsTable();
     updateCockpitKpis();
     initExchangeSymbols();
+
+    // Restore last mobile view tab
+    if (window.innerWidth <= 1024 && userSettings.mobileTab) {
+      switchMobileTab(userSettings.mobileTab);
+    }
   </script>
 </body>
 </html>
