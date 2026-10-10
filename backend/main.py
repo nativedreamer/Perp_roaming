@@ -14,7 +14,10 @@ from pydantic import BaseModel
 from backend.config import settings
 from backend.database import SignalDatabase
 from backend.scanner import BinanceFuturesScanner
-from backend.strategy import Candle, calculate_indicators, evaluate_signal, calculate_levels
+from backend.strategy import (
+    Candle, calculate_indicators, evaluate_signal, calculate_levels,
+    calculate_signal_strength, calculate_vwap
+)
 
 # Configure logging
 logging.basicConfig(
@@ -82,6 +85,11 @@ class BacktestRequest(BaseModel):
     atr_period: int = 14
     sl_atr_mult: float = 2.5
     tp1_ratio: float = 1.5
+
+class AnalyzeRequest(BaseModel):
+    symbol: str = "BTCUSDT"
+    timeframe: str = "5m"
+    bars: int = 120
 
 # ----------------- API Endpoints -----------------
 
@@ -298,6 +306,101 @@ async def run_backtest(req: BacktestRequest):
         "tp4_hits": tp4,
         "max_loss_streak": max_streak
     }
+
+# ----------------- On-Demand Manual Pair Analysis -----------------
+async def execute_symbol_analysis(symbol: str, timeframe: str = "5m", bars: int = 120):
+    clean_sym = symbol.strip().upper()
+    if not clean_sym.endswith("USDT"):
+        clean_sym += "USDT"
+
+    candles = await scanner.fetch_klines(clean_sym, timeframe, limit=max(50, min(500, bars)))
+    if len(candles) < 50:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Insufficient candles returned for {clean_sym} ({len(candles)} bars). Need at least 50."
+        )
+
+    indicators = calculate_indicators(candles, settings.ATR_PERIOD)
+    last_idx = len(candles) - 2  # last closed bar
+    current_candle = candles[-1]  # live formation bar
+    last_closed = candles[last_idx]
+    prev_closed = candles[last_idx - 1]
+    last_ind = indicators[last_idx]
+    prev_ind = indicators[last_idx - 1]
+
+    vwap = calculate_vwap(candles, last_idx, weekly=False)
+
+    # Directional momentum evaluation
+    bull_spread = last_ind["e11"] > last_ind["e34"]
+    bull_cross = prev_ind["e11"] <= prev_ind["e34"] and last_ind["e11"] > last_ind["e34"]
+    bear_cross = prev_ind["e11"] >= prev_ind["e34"] and last_ind["e11"] < last_ind["e34"]
+
+    direction = "LONG" if (bull_cross or bull_spread) else "SHORT"
+    confidence = calculate_signal_strength(candles, indicators, last_idx, direction, vwap)
+
+    levels = calculate_levels(
+        current_candle.c,
+        direction,
+        last_ind["atr"],
+        settings.SL_ATR_MULT,
+        settings.TP1_RATIO
+    )
+
+    ticker = scanner.market_cache.get(clean_sym, {})
+    change_24h = ticker.get("change", 0.0)
+
+    score = confidence.get("score", 75)
+    score_rating = "MODERATE CONFLUENCE"
+    if score >= 85:
+        score_rating = "ULTRA HIGH CONFIDENCE"
+    elif score >= 70:
+        score_rating = "STRONG CONFLUENCE"
+    elif score < 55:
+        score_rating = "LOW CONFIDENCE / CHOP"
+
+    verdict = "CONFIRMED BULLISH CROSSOVER" if bull_cross else ("CONFIRMED BEARISH CROSSOVER" if bear_cross else ("BULLISH MOMENTUM" if bull_spread else "BEARISH MOMENTUM"))
+
+    return {
+        "symbol": clean_sym,
+        "timeframe": timeframe,
+        "current_price": current_candle.c,
+        "direction": direction,
+        "verdict": verdict,
+        "confidence_score": score,
+        "score_rating": score_rating,
+        "breakdown": confidence.get("breakdown", {}),
+        "r_vol": confidence.get("r_vol", 1.0),
+        "body_ratio": confidence.get("body_ratio", 50),
+        "levels": levels,
+        "indicators": {
+            "ema11": last_ind["e11"],
+            "ema34": last_ind["e34"],
+            "ema200": last_ind["e200"],
+            "vwap": vwap,
+            "atr": last_ind["atr"]
+        },
+        "change_24h": change_24h,
+        "bars_analyzed": len(candles),
+        "timestamp_utc": datetime.utcnow().isoformat()
+    }
+
+@app.get("/api/analyze/{symbol}")
+async def analyze_pair_get(
+    symbol: str,
+    timeframe: str = Query("5m"),
+    bars: int = Query(120, ge=50, le=500)
+):
+    """
+    On-demand analysis endpoint for any Binance perpetual futures pair with its confidence score.
+    """
+    return await execute_symbol_analysis(symbol, timeframe, bars)
+
+@app.post("/api/analyze")
+async def analyze_pair_post(req: AnalyzeRequest):
+    """
+    POST on-demand analysis endpoint for any Binance perpetual futures pair.
+    """
+    return await execute_symbol_analysis(req.symbol, req.timeframe, req.bars)
 
 # ----------------- Download ZIP for GitHub -----------------
 @app.get("/api/download/zip")
