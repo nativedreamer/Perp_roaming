@@ -994,6 +994,83 @@
       max-width: 90vw;
     }
     .toast-popup.visible { transform: translateY(0); }
+
+    :root { --accent-magenta: #ff2bd6; }
+    body {
+      background:
+        radial-gradient(1100px 460px at 8% -12%, rgba(255, 43, 214, 0.09), transparent 52%),
+        radial-gradient(860px 380px at 100% 0%, rgba(0, 240, 255, 0.09), transparent 48%),
+        var(--bg-dark);
+    }
+    body::before {
+      content: "";
+      pointer-events: none;
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(to bottom, rgba(255,255,255,0.03) 0 1px, transparent 1px 4px);
+      opacity: 0.16;
+      z-index: 0;
+      animation: scanDrift 10s linear infinite;
+    }
+    .terminal-container { position: relative; z-index: 1; }
+    @keyframes scanDrift { from { transform: translateY(0); } to { transform: translateY(4px); } }
+    @keyframes seatPulse {
+      0%, 100% { box-shadow: 0 0 0 rgba(0, 240, 255, 0); }
+      50% { box-shadow: 0 0 18px rgba(0, 240, 255, 0.16); }
+    }
+    @keyframes sheen { 0% { left: -45%; } 100% { left: 130%; } }
+    .brand-glyph { animation: seatPulse 2.8s ease-in-out infinite; }
+    .master-header { border-color: rgba(0, 240, 255, 0.28); }
+    .kpi-card { transition: transform 0.2s ease, border-color 0.2s ease; }
+    .kpi-card:hover { transform: translateY(-1px); border-color: rgba(255, 43, 214, 0.35); }
+    .desk-rail { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    @media (max-width: 800px) { .desk-rail { grid-template-columns: repeat(2, 1fr); } }
+    .desk-seat {
+      background: linear-gradient(180deg, rgba(20, 27, 43, 0.96), rgba(8, 11, 17, 0.92));
+      border: 1px solid rgba(0, 240, 255, 0.24);
+      border-radius: 8px;
+      padding: 8px 10px;
+      min-height: 58px;
+      position: relative;
+      overflow: hidden;
+      animation: seatPulse 3.6s ease-in-out infinite;
+    }
+    .desk-seat:nth-child(2) { animation-delay: .4s; border-color: rgba(255, 43, 214, 0.28); }
+    .desk-seat:nth-child(3) { animation-delay: .8s; }
+    .desk-seat:nth-child(4) { animation-delay: 1.2s; border-color: rgba(245, 158, 11, 0.28); }
+    .desk-seat::after {
+      content: "";
+      position: absolute;
+      left: -45%;
+      top: 0;
+      width: 38%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.07), transparent);
+      animation: sheen 4.2s ease-in-out infinite;
+      pointer-events: none;
+    }
+    .desk-seat .seat-k { display: block; font-size: 9px; letter-spacing: 1.3px; color: var(--accent-magenta); font-weight: 800; }
+    .desk-seat b { display: block; font-family: var(--font-mono); font-size: 14px; color: #fff; position: relative; z-index: 1; }
+    .desk-seat small, .desk-seat .seat-k { position: relative; z-index: 1; }
+    .desk-seat small { color: var(--text-muted); font-size: 10px; }
+    .desk-seat b.up { color: var(--accent-green); }
+    .desk-seat b.down { color: var(--accent-amber); }
+    .ledger-wrap { margin-top: 6px; max-height: 380px; overflow: auto; border: 1px solid var(--border-subtle); border-radius: 8px; background: rgba(8, 11, 17, 0.45); }
+    .ledger-table { width: 100%; border-collapse: collapse; font-size: 10.5px; font-family: var(--font-mono); }
+    .ledger-table th { position: sticky; top: 0; background: #12182a; color: var(--text-dim); text-align: left; padding: 6px; font-size: 9px; letter-spacing: 0.4px; z-index: 1; }
+    .ledger-table td { padding: 5px 6px; border-top: 1px solid rgba(27,36,56,.85); white-space: nowrap; }
+    .ledger-table tr.flat td:first-child { color: var(--accent-cyan); font-weight: 800; }
+    .ledger-table tr.compound td:first-child { color: var(--accent-magenta); font-weight: 800; }
+    .book-pills { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+    .book-pill { flex: 1; min-width: 150px; border: 1px solid var(--border-subtle); border-radius: 6px; padding: 6px 8px; background: var(--bg-input); }
+    .book-pill small { display: block; font-size: 9px; letter-spacing: 0.7px; color: var(--text-dim); font-weight: 800; }
+    .book-pill b { display: block; font-family: var(--font-mono); font-size: 14px; }
+    .book-pill span { font-size: 10px; color: var(--text-muted); }
+    .ledger-filters { display: flex; gap: 4px; }
+    .ledger-filters button.active { border-color: var(--accent-cyan); color: var(--accent-cyan); background: var(--accent-cyan-dim); }
+    @media (prefers-reduced-motion: reduce) {
+      body::before, .brand-glyph, .desk-seat, .desk-seat::after { animation: none; }
+    }
   </style>
 </head>
 <body class="view-cards">
@@ -1124,6 +1201,13 @@
         <span style="color:var(--text-dim); font-size:11px;">Loading live Binance perpetual contracts...</span>
       </div>
     </div>
+
+    <section class="desk-rail" id="deskRail" aria-label="Live desk status">
+      <div class="desk-seat"><span class="seat-k">SCAN</span><b id="deskScan" class="up">LIVE</b><small id="deskScanSub">cycle</small></div>
+      <div class="desk-seat"><span class="seat-k">SIZE</span><b id="deskSize">FLAT</b><small id="deskSizeSub">ticket</small></div>
+      <div class="desk-seat"><span class="seat-k">FILLS</span><b id="deskFills">0 / 0</b><small>flat · compound</small></div>
+      <div class="desk-seat"><span class="seat-k">RISK</span><b id="deskRisk">1%</b><small id="deskRiskSub">score gate</small></div>
+    </section>
 
     <!-- COCKPIT PERFORMANCE KPIS -->
     <section class="cockpit-grid">
@@ -1406,11 +1490,19 @@
               <div class="bt-metric"><b id="btAvgLeverage">0x</b><small>Avg Leverage</small></div>
             </div>
             <div id="btSummaryNarrative" style="font-size:10.5px; color:var(--text-muted); margin-top:8px; line-height:1.4;"></div>
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; gap:8px;">
-              <span style="font-size:10px; color:var(--text-muted);">Simulation activity · grouped by Africa/Lagos day</span>
-              <button class="btn-terminal" style="padding:5px 8px;" onclick="downloadSimulationCsv()">⇩ Download CSV</button>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; gap:8px; flex-wrap:wrap;">
+              <span style="font-size:10px; color:var(--text-muted);">Paper ledger · flat and compound · Africa/Lagos</span>
+              <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+                <div class="ledger-filters">
+                  <button class="btn-terminal active" data-book="ALL" onclick="setLedgerFilter('ALL')">Both</button>
+                  <button class="btn-terminal" data-book="FLAT" onclick="setLedgerFilter('FLAT')">Flat</button>
+                  <button class="btn-terminal" data-book="COMPOUND" onclick="setLedgerFilter('COMPOUND')">Compound</button>
+                </div>
+                <button class="btn-terminal" style="padding:5px 8px;" onclick="downloadSimulationCsv()">⇩ CSV</button>
+              </div>
             </div>
-            <div id="simulationActivityContainer" style="margin-top:6px; max-height:300px; overflow:auto;"></div>
+            <div id="ledgerSummary"></div>
+            <div id="simulationActivityContainer" class="ledger-wrap"></div>
           </div>
         </div>
 
@@ -3167,10 +3259,11 @@
       return +(min + ratio * (max - min)).toFixed(2);
     }
 
-    function calculateSimulationLevels(entry, direction, atr, score, equity) {
+    function calculateSimulationLevels(entry, direction, atr, score, equity, mode) {
       const leverage = simulationLeverage(score);
       const threshold = Number(userSettings.signalThreshold ?? 80);
-      const compound = userSettings.simulationMode === 'compound' && Number(score) > threshold;
+      const bookMode = mode || userSettings.simulationMode || 'paper';
+      const compound = bookMode === 'compound' && Number(score) > threshold;
       const margin = compound
         ? equity * 0.10
         : Number(userSettings.baseTradeSize || 100);
@@ -3221,36 +3314,107 @@
       return { gross, funding, net: gross + funding, hours };
     }
 
+    let ledgerFilter = 'ALL';
+    function setLedgerFilter(filter) {
+      ledgerFilter = filter;
+      renderSimulationActivity(window.lastSimulationTrades || []);
+    }
+
+    function bookStats(trades, equity) {
+      const list = trades || [];
+      const wins = list.filter(row => String(row.result || '').includes('WIN')).length;
+      const net = list.reduce((sum, row) => sum + Number(row.net || 0), 0);
+      return { n: list.length, wr: list.length ? (wins / list.length * 100).toFixed(1) : '0.0', net, equity: Number(equity) };
+    }
+
+    function watStamp(ms) {
+      return new Intl.DateTimeFormat('en-NG', {
+        timeZone: 'Africa/Lagos', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false
+      }).format(new Date(ms));
+    }
+
     function renderSimulationActivity(trades) {
       const container = $('simulationActivityContainer');
+      const summary = $('ledgerSummary');
       if (!container) return;
-      if (!trades.length) {
-        container.innerHTML = '<div style="padding:14px; color:var(--text-dim); text-align:center;">No completed simulation trades.</div>';
+      const books = window.lastSimulationBooks;
+      const flatTrades = books && books.flat ? books.flat.trades || [] : [];
+      const compTrades = books && books.compound ? books.compound.trades || [] : [];
+      const fallback = (!flatTrades.length && !compTrades.length)
+        ? (trades || []).map(row => ({ ...row, book: row.book || (row.compound ? 'COMPOUND' : 'FLAT') }))
+        : [];
+      let rows = flatTrades.concat(compTrades, fallback);
+      if (ledgerFilter === 'FLAT') rows = rows.filter(row => (row.book || 'FLAT') === 'FLAT');
+      if (ledgerFilter === 'COMPOUND') rows = rows.filter(row => row.book === 'COMPOUND');
+      rows.sort((a, b) => (a.exitTime || 0) - (b.exitTime || 0) || String(a.book || '').localeCompare(String(b.book || '')));
+      const pill = (label, book) => {
+        if (!book) return '';
+        const st = bookStats(book.trades, book.equity);
+        const color = st.net >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+        return `<div class="book-pill"><small>${label}</small><b style="color:${color}">$${Number(book.equity).toFixed(2)}</b><span>${st.n} fills · ${st.wr}% win · net ${st.net >= 0 ? '+' : ''}$${st.net.toFixed(2)}</span></div>`;
+      };
+      if (summary) summary.innerHTML = `<div class="book-pills">${pill('FLAT BOOK', books && books.flat)}${pill('COMPOUND BOOK', books && books.compound)}</div>`;
+      document.querySelectorAll('.ledger-filters button').forEach(btn => btn.classList.toggle('active', btn.dataset.book === ledgerFilter));
+      if (!rows.length) {
+        container.innerHTML = '<div style="padding:14px; color:var(--text-dim); text-align:center;">No completed simulation trades. Run the historical simulation to fill both books.</div>';
         return;
       }
-      const groups = {};
-      trades.slice().reverse().forEach(t => {
-        const day = new Intl.DateTimeFormat('en-NG', { timeZone: 'Africa/Lagos', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(t.exitTime || t.entryTime));
-        (groups[day] ||= []).push(t);
-      });
-      container.innerHTML = Object.entries(groups).map(([day, dayTrades]) => `
-        <div style="margin-bottom:8px;">
-          <div style="font-size:10px; color:var(--accent-cyan); font-family:var(--font-mono); margin-bottom:4px;">${day} · ${dayTrades.length} trades</div>
-          ${dayTrades.map(t => `<div style="display:grid; grid-template-columns:1fr auto auto auto; gap:8px; padding:5px 6px; border-bottom:1px solid rgba(27,36,56,.65); font-size:10px;">
-            <span><b>${t.symbol}</b> ${t.direction} · ${t.result}</span><span>${t.strengthScore}/100 · ${t.leverage.toFixed(1)}x</span><span style="color:${t.net >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'}">${t.net >= 0 ? '+' : ''}$${t.net.toFixed(2)}</span><span style="color:var(--accent-amber)">${t.funding.toFixed(2)} fund</span>
-          </div>`).join('')}
-        </div>`).join('');
+      container.innerHTML = `<table class="ledger-table"><thead><tr><th>Book</th><th>Exit WAT</th><th>Pair</th><th>Side</th><th>Score</th><th>Lev</th><th>Margin</th><th>Entry</th><th>Exit</th><th>Result</th><th>Net</th><th>Equity</th></tr></thead><tbody>${rows.map(row => {
+        const book = row.book || 'FLAT';
+        const net = Number(row.net || 0);
+        return `<tr class="${book === 'COMPOUND' ? 'compound' : 'flat'}"><td>${book}</td><td>${watStamp(row.exitTime || row.entryTime)}</td><td>${row.symbol}</td><td>${row.direction}</td><td>${row.strengthScore}</td><td>${Number(row.leverage).toFixed(1)}x</td><td>$${Number(row.margin).toFixed(0)}</td><td>${fmtPrice(row.entry)}</td><td>${fmtPrice(row.exit)}</td><td>${row.result}</td><td style="color:${net >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'}">${net >= 0 ? '+' : ''}$${net.toFixed(2)}</td><td>$${Number(row.equityAfter || 0).toFixed(2)}</td></tr>`;
+      }).join('')}</tbody></table>`;
     }
 
     function downloadSimulationCsv() {
-      const trades = window.lastSimulationTrades || [];
+      const books = window.lastSimulationBooks;
+      const trades = books
+        ? (books.flat.trades || []).concat(books.compound.trades || [])
+        : (window.lastSimulationTrades || []);
       if (!trades.length) { alert('Run a simulation first.'); return; }
-      const headers = ['entry_utc','exit_utc','symbol','direction','score','compound','leverage','margin','position_size','entry','exit','result','gross_pnl','funding_pnl','net_pnl','funding_rate'];
-      const rows = trades.map(t => [new Date(t.entryTime).toISOString(), new Date(t.exitTime).toISOString(), t.symbol, t.direction, t.strengthScore, t.compound, t.leverage, t.margin, t.positionSize, t.entry, t.exit, t.result, t.gross, t.funding, t.net, t.fundingRate]);
+      const headers = ['book','entry_utc','exit_utc','symbol','direction','score','compound','leverage','margin','position_size','entry','exit','result','gross_pnl','funding_pnl','net_pnl','equity_after','funding_rate'];
+      const rows = trades.map(row => [row.book || (row.compound ? 'COMPOUND' : 'FLAT'), new Date(row.entryTime).toISOString(), new Date(row.exitTime).toISOString(), row.symbol, row.direction, row.strengthScore, row.compound, row.leverage, row.margin, row.positionSize, row.entry, row.exit, row.result, row.gross, row.funding, row.net, row.equityAfter ?? '', row.fundingRate]);
       const csv = [headers, ...rows].map(row => row.map(v => `"${String(v).replaceAll('"','""')}"`).join(',')).join('\n');
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
       const url = URL.createObjectURL(blob); const a = document.createElement('a');
-      a.href = url; a.download = `perp-roaming-simulation-${new Date().toISOString().slice(0,10)}.csv`; a.click(); URL.revokeObjectURL(url);
+      a.href = url; a.download = `perp-roaming-paper-ledger-${new Date().toISOString().slice(0,10)}.csv`; a.click(); URL.revokeObjectURL(url);
+    }
+
+    function runSimulationBook(candles, ind, trendMode, fundingRate, sym, mode) {
+      let equity = Number(userSettings.startingEquity || 10000);
+      let inTrade = null;
+      const trades = [];
+      let tp1Hits = 0, slHits = 0, leverageSum = 0, fundingTotal = 0;
+      for (let i = 40; i < candles.length - 1; i++) {
+        const c = candles[i];
+        if (inTrade) {
+          const isLong = inTrade.direction === 'LONG';
+          const hitSL = isLong ? c.l <= inTrade.sl : c.h >= inTrade.sl;
+          const hitTP1 = isLong ? c.h >= inTrade.tp1 : c.l <= inTrade.tp1;
+          const hitTP2 = isLong ? c.h >= inTrade.tp2 : c.l <= inTrade.tp2;
+          if (hitSL || hitTP2) {
+            const exit = hitSL ? inTrade.sl : inTrade.tp2;
+            const settled = settleSimulationTrade(inTrade, exit, c.t, fundingRate);
+            const result = hitSL && !inTrade.hitTp1 ? 'LOSS' : (hitSL ? 'WIN_TP1_TRAIL' : 'WIN_TP2');
+            if (result.includes('WIN')) tp1Hits++; else slHits++;
+            equity += settled.net;
+            fundingTotal += settled.funding;
+            trades.push({ ...inTrade, book: mode === 'compound' ? 'COMPOUND' : 'FLAT', exit, exitTime: c.t, result, ...settled, fundingRate, equityAfter: equity });
+            leverageSum += inTrade.leverage;
+            inTrade = null;
+            continue;
+          }
+          if (hitTP1 && !inTrade.hitTp1) { inTrade.hitTp1 = true; tp1Hits++; }
+        }
+        if (!inTrade) {
+          const sig = evaluateSignalBar(candles, ind, i, trendMode, true);
+          if (sig) {
+            const levels = calculateSimulationLevels(c.c, sig.direction, ind[i].atr || c.c * 0.01, sig.strength.score, equity, mode);
+            inTrade = { symbol: sym, entryIdx: i, entryTime: c.t, direction: sig.direction, entry: c.c, strengthScore: sig.strength.score, hitTp1: false, ...levels };
+          }
+        }
+      }
+      return { trades, equity, tp1Hits, slHits, leverageSum, fundingTotal, mode };
     }
 
     async function runHistoricalBacktest() {
@@ -3267,44 +3431,36 @@
         const candles = raw.map(k => ({ t: +k[0], o: +k[1], h: +k[2], l: +k[3], c: +k[4], v: +k[5] }));
         const ind = calcIndicators(candles, 14);
         const fundingRate = await getCurrentFundingRate(sym);
-        let equity = Number(userSettings.startingEquity || 10000);
-        let inTrade = null; const trades = [];
-        let tp1Hits = 0; let slHits = 0; let leverageSum = 0; let fundingTotal = 0;
-        for (let i = 40; i < candles.length - 1; i++) {
-          const c = candles[i];
-          if (inTrade) {
-            const isLong = inTrade.direction === 'LONG';
-            const hitSL = isLong ? c.l <= inTrade.sl : c.h >= inTrade.sl;
-            const hitTP1 = isLong ? c.h >= inTrade.tp1 : c.l <= inTrade.tp1;
-            const hitTP2 = isLong ? c.h >= inTrade.tp2 : c.l <= inTrade.tp2;
-            if (hitSL || hitTP2) {
-              const exit = hitSL ? inTrade.sl : inTrade.tp2;
-              const settled = settleSimulationTrade(inTrade, exit, c.t, fundingRate);
-              const result = hitSL && !inTrade.hitTp1 ? 'LOSS' : (hitSL ? 'WIN_TP1_TRAIL' : 'WIN_TP2');
-              if (result.includes('WIN')) tp1Hits++; else slHits++;
-              equity += settled.net; fundingTotal += settled.funding;
-              trades.push({ ...inTrade, exit: exit, exitTime: c.t, result, ...settled, fundingRate });
-              leverageSum += inTrade.leverage; inTrade = null; continue;
-            }
-            if (hitTP1 && !inTrade.hitTp1) { inTrade.hitTp1 = true; tp1Hits++; }
-          }
-          if (!inTrade) {
-            const sig = evaluateSignalBar(candles, ind, i, trendMode, true);
-            if (sig) {
-              const levels = calculateSimulationLevels(c.c, sig.direction, ind[i].atr || c.c * .01, sig.strength.score, equity);
-              inTrade = { symbol: sym, entryIdx: i, entryTime: c.t, direction: sig.direction, entry: c.c, strengthScore: sig.strength.score, hitTp1: false, ...levels };
-            }
-          }
-        }
-        window.lastSimulationTrades = trades;
-        localStorage.setItem('perp_roaming_last_simulation', JSON.stringify({ trades, equity, savedAt: Date.now() }));
-        renderSimulationActivity(trades);
-        const completed = trades.length; const wins = trades.filter(t => t.result.includes('WIN')).length; const losses = trades.filter(t => t.result === 'LOSS').length;
+        const flat = runSimulationBook(candles, ind, trendMode, fundingRate, sym, 'paper');
+        const compound = runSimulationBook(candles, ind, trendMode, fundingRate, sym, 'compound');
+        const active = userSettings.simulationMode === 'compound' ? compound : flat;
+        window.lastSimulationTrades = active.trades;
+        window.lastSimulationBooks = { flat, compound };
+        localStorage.setItem('perp_roaming_last_simulation', JSON.stringify({ trades: active.trades, equity: active.equity, flat, compound, savedAt: Date.now(), mode: userSettings.simulationMode }));
+        renderSimulationActivity(active.trades);
+        paintDesk();
+        const trades = active.trades;
+        const completed = trades.length;
+        const wins = trades.filter(row => row.result.includes('WIN')).length;
+        const losses = trades.filter(row => row.result === 'LOSS').length;
         const wr = completed ? ((wins / completed) * 100).toFixed(1) : '0.0';
-        const avgStrength = completed ? (trades.reduce((a,b) => a + b.strengthScore, 0) / completed).toFixed(1) : '--';
-        $('btTotalTrades').textContent = completed; $('btWinRate').textContent = `${wr}%`; $('btAvgStrength').textContent = `${avgStrength}/100`; $('btProfitFactor').textContent = losses ? ((trades.filter(t => t.net > 0).reduce((a,b) => a + b.net, 0) / Math.abs(trades.filter(t => t.net < 0).reduce((a,b) => a + b.net, 0))).toFixed(2)) : (wins ? '99.0' : '0.0'); $('btTp1Hits').textContent = tp1Hits; $('btSlHits').textContent = slHits;
-        $('btFinalEquity').textContent = `$${equity.toFixed(2)}`; $('btNetPnl').textContent = `$${(equity - Number(userSettings.startingEquity || 10000)).toFixed(2)}`; $('btFundingPnl').textContent = `$${fundingTotal.toFixed(2)}`; $('btAvgLeverage').textContent = `${completed ? (leverageSum / completed).toFixed(2) : '0.00'}x`;
-        $('btSummaryNarrative').innerHTML = `<b>${sym} (${tf})</b> · <b>${userSettings.simulationMode === 'compound' ? 'Compound' : 'Flat Paper'}</b> mode · compounding only for scores <b>> ${userSettings.signalThreshold}</b> · funding rate <b>${(fundingRate * 100).toFixed(4)}%</b> per 8h.`;
+        const avgStrength = completed ? (trades.reduce((a, b) => a + b.strengthScore, 0) / completed).toFixed(1) : '--';
+        const grossWins = trades.filter(row => row.net > 0).reduce((a, b) => a + b.net, 0);
+        const grossLoss = Math.abs(trades.filter(row => row.net < 0).reduce((a, b) => a + b.net, 0));
+        $('btTotalTrades').textContent = completed;
+        $('btWinRate').textContent = `${wr}%`;
+        $('btAvgStrength').textContent = `${avgStrength}/100`;
+        $('btProfitFactor').textContent = losses ? (grossWins / grossLoss).toFixed(2) : (wins ? '99.0' : '0.0');
+        $('btTp1Hits').textContent = active.tp1Hits;
+        $('btSlHits').textContent = active.slHits;
+        $('btFinalEquity').textContent = `$${active.equity.toFixed(2)}`;
+        $('btNetPnl').textContent = `$${(active.equity - Number(userSettings.startingEquity || 10000)).toFixed(2)}`;
+        $('btFundingPnl').textContent = `$${active.fundingTotal.toFixed(2)}`;
+        $('btAvgLeverage').textContent = `${completed ? (active.leverageSum / completed).toFixed(2) : '0.00'}x`;
+        const startEq = Number(userSettings.startingEquity || 10000);
+        const flatNet = flat.equity - startEq;
+        const compNet = compound.equity - startEq;
+        $('btSummaryNarrative').innerHTML = `<b>${sym} (${tf})</b> · headline follows <b>${userSettings.simulationMode === 'compound' ? 'Compound' : 'Flat Paper'}</b> · compound sizing only when score <b>> ${userSettings.signalThreshold}</b> · funding <b>${(fundingRate * 100).toFixed(4)}%</b> / 8h.<br>Flat net <b style="color:${flatNet >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'}">${flatNet >= 0 ? '+' : ''}$${flatNet.toFixed(2)}</b> · Compound net <b style="color:${compNet >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'}">${compNet >= 0 ? '+' : ''}$${compNet.toFixed(2)}</b>. Same signals, separate books.`;
       } catch (err) { $('btSummaryNarrative').textContent = 'Simulation failed: ' + err.message; }
     }
 
@@ -3427,6 +3583,28 @@
       const part = (name) => parts.find((item) => item.type === name)?.value || '00';
       $('masterClock').textContent = `${part('hour')}:${part('minute')}:${part('second')} WAT`;
       $('masterDate').textContent = new Intl.DateTimeFormat('en-NG', { timeZone: 'Africa/Lagos', weekday: 'short', year: 'numeric', month: 'short', day: '2-digit' }).format(now).toUpperCase();
+      paintDesk();
+    }
+
+    function paintDesk() {
+      const scan = $('deskScan');
+      if (!scan) return;
+      scan.textContent = isRunning ? 'LIVE' : 'HOLD';
+      scan.className = isRunning ? 'up' : 'down';
+      const cycle = $('sweepCycleText');
+      if ($('deskScanSub')) $('deskScanSub').textContent = cycle ? cycle.textContent : 'scanner';
+      const compoundOn = userSettings.simulationMode === 'compound';
+      if ($('deskSize')) $('deskSize').textContent = compoundOn ? 'COMPOUND' : 'FLAT';
+      const books = window.lastSimulationBooks;
+      if (books && books.flat && books.compound) {
+        if ($('deskSizeSub')) $('deskSizeSub').textContent = `F $${Number(books.flat.equity).toFixed(0)} · C $${Number(books.compound.equity).toFixed(0)}`;
+        if ($('deskFills')) $('deskFills').textContent = `${books.flat.trades.length} / ${books.compound.trades.length}`;
+      } else {
+        if ($('deskSizeSub')) $('deskSizeSub').textContent = `ticket $${Number(userSettings.baseTradeSize || 100).toFixed(0)}`;
+        if ($('deskFills')) $('deskFills').textContent = `${localSignals.filter(s => s.status !== 'OPEN').length} sig`;
+      }
+      if ($('deskRisk')) $('deskRisk').textContent = `${Number(userSettings.riskPerTrade || 1)}%`;
+      if ($('deskRiskSub')) $('deskRiskSub').textContent = `gate >${userSettings.signalThreshold ?? 80}`;
     }
 
     function restoreLastSimulation() {
@@ -3434,10 +3612,13 @@
         const saved = JSON.parse(localStorage.getItem('perp_roaming_last_simulation') || 'null');
         if (!saved || !Array.isArray(saved.trades) || !saved.trades.length) return;
         window.lastSimulationTrades = saved.trades;
+        if (saved.flat && saved.compound) window.lastSimulationBooks = { flat: saved.flat, compound: saved.compound };
         $('btResultContainer').style.display = 'block';
         renderSimulationActivity(saved.trades);
         if (typeof saved.equity === 'number') $('btFinalEquity').textContent = `$${saved.equity.toFixed(2)}`;
-        $('btSummaryNarrative').textContent = `Restored ${saved.trades.length} persisted simulation trades from ${new Intl.DateTimeFormat('en-NG', { timeZone: 'Africa/Lagos', dateStyle: 'medium', timeStyle: 'short' }).format(new Date(saved.savedAt || Date.now()))} WAT. Run again to refresh. `;
+        const both = saved.flat && saved.compound ? ` Flat ${saved.flat.trades.length} · Compound ${saved.compound.trades.length}.` : '';
+        $('btSummaryNarrative').textContent = `Restored paper ledger from ${new Intl.DateTimeFormat('en-NG', { timeZone: 'Africa/Lagos', dateStyle: 'medium', timeStyle: 'short' }).format(new Date(saved.savedAt || Date.now()))} WAT.${both} Run again to refresh.`;
+        paintDesk();
       } catch (e) {}
     }
     setInterval(updateClock, 1000);
