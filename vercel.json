@@ -1,12 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "version": 2,
-  "rewrites": [
-    { "source": "/manifest.webmanifest", "destination": "/frontend/manifest.webmanifest" },
-    { "source": "/service-worker.js", "destination": "/frontend/service-worker.js" },
-    { "source": "/static/(.*)", "destination": "/frontend/$1" },
-    { "source": "/", "destination": "/frontend/index.html" }
-  ],
+  "framework": null,
+  "installCommand": "echo skip-install",
+  "buildCommand": "rm -rf dist && mkdir -p dist/static/icons && cp frontend/index.html frontend/manifest.webmanifest frontend/service-worker.js dist/ && cp frontend/manifest.webmanifest dist/static/manifest.webmanifest && cp frontend/icons/*.png dist/static/icons/",
+  "outputDirectory": "dist",
   "headers": [
     {
       "source": "/service-worker.js",
@@ -18,7 +15,15 @@
     {
       "source": "/manifest.webmanifest",
       "headers": [
-        { "key": "Content-Type", "value": "application/manifest+json" }
+        { "key": "Content-Type", "value": "application/manifest+json" },
+        { "key": "Cache-Control", "value": "no-cache" }
+      ]
+    },
+    {
+      "source": "/static/manifest.webmanifest",
+      "headers": [
+        { "key": "Content-Type", "value": "application/manifest+json" },
+        { "key": "Cache-Control", "value": "no-cache" }
       ]
     }
   ]

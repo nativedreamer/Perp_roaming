@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --port=3000 --host=0.0.0.0",
-    "build": "vite build",
+    "build": "rm -rf dist && mkdir -p dist/static/icons && cp frontend/index.html frontend/manifest.webmanifest frontend/service-worker.js dist/ && cp frontend/manifest.webmanifest dist/static/manifest.webmanifest && cp frontend/icons/*.png dist/static/icons/",
     "preview": "vite preview --port=3000 --host=0.0.0.0",
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit"
