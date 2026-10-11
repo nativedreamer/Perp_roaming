@@ -1,0 +1,127 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --color-bg-base: #030712;
+    --color-bg-surface: #080d1a;
+    --color-bg-elevated: #0f172a;
+    --color-border-subtle: #1e293b;
+    --color-border-glow: rgba(0, 240, 255, 0.25);
+    
+    --neon-cyan: #00f0ff;
+    --neon-green: #10b981;
+    --neon-emerald: #00ff88;
+    --neon-red: #f43f5e;
+    --neon-amber: #f59e0b;
+    --neon-purple: #a855f7;
+  }
+
+  body {
+    background-color: #030712;
+    color: #f1f5f9;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    overflow-x: hidden;
+  }
+
+  .font-mono {
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Custom terminal scrollbars */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: #030712;
+}
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+
+/* Radar scanline animation */
+@keyframes radar-sweep {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.animate-radar-sweep {
+  animation: radar-sweep 4s linear infinite;
+}
+
+/* ===================================================
+   2D PACMAN QUANT ARCADE CSS ANIMATIONS
+   =================================================== */
+
+@keyframes pacman-chomp-upper {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(-35deg); }
+}
+
+@keyframes pacman-chomp-lower {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(35deg); }
+}
+
+@keyframes pacman-run-across {
+  0% { transform: translateX(-60px); }
+  100% { transform: translateX(calc(100vw + 80px)); }
+}
+
+@keyframes ghost-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes dot-flash {
+  0%, 100% { opacity: 0.3; transform: scale(0.85); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+
+.pacman-upper {
+  animation: pacman-chomp-upper 0.28s infinite ease-in-out;
+  transform-origin: bottom center;
+}
+
+.pacman-lower {
+  animation: pacman-chomp-lower 0.28s infinite ease-in-out;
+  transform-origin: top center;
+}
+
+.pacman-runner {
+  animation: pacman-run-across 18s linear infinite;
+}
+
+.ghost-bob {
+  animation: ghost-bounce 0.7s ease-in-out infinite;
+}
+
+.dot-pulse {
+  animation: dot-flash 1.2s ease-in-out infinite;
+}
+
+/* Quant glowing utilities */
+.glow-cyan {
+  box-shadow: 0 0 16px -2px rgba(0, 240, 255, 0.35);
+}
+
+.glow-emerald {
+  box-shadow: 0 0 16px -2px rgba(16, 185, 129, 0.35);
+}
+
+.glow-red {
+  box-shadow: 0 0 16px -2px rgba(244, 63, 94, 0.35);
+}
+
+.border-glow-cyan {
+  border-color: rgba(0, 240, 255, 0.35);
+}

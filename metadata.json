@@ -1,0 +1,6 @@
+{
+  "name": "Perp Roaming - 24/7 Binance Futures Quant Radar & Paper Trading Bot",
+  "description": "High-frequency quant perpetual radar, Volumetric Order Blocks EMA strategy, live paper trading engine that fills simulated orders in real-time, and Grok bot quant terminal.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
