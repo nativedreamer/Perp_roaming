@@ -48,11 +48,7 @@ export class PaperTradingEngine {
   }
 
   private loadAccount(): PaperAccount {
-    try {
-      const stored = localStorage.getItem(ACCOUNT_KEY);
-      if (stored) return JSON.parse(stored);
-    } catch (e) {}
-    return {
+    const defaultAcc: PaperAccount = {
       balance: DEFAULT_INITIAL_EQUITY,
       equity: DEFAULT_INITIAL_EQUITY,
       initialEquity: DEFAULT_INITIAL_EQUITY,
@@ -67,6 +63,31 @@ export class PaperTradingEngine {
       profitFactor: 0,
       mode: 'FLAT'
     };
+    try {
+      const stored = localStorage.getItem(ACCOUNT_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed && typeof parsed === 'object') {
+          return {
+            ...defaultAcc,
+            ...parsed,
+            balance: Number(parsed.balance) || defaultAcc.balance,
+            equity: Number(parsed.equity) || defaultAcc.equity,
+            initialEquity: Number(parsed.initialEquity) || defaultAcc.initialEquity,
+            usedMargin: Number(parsed.usedMargin) || 0,
+            freeMargin: Number(parsed.freeMargin) || defaultAcc.freeMargin,
+            realizedPnl: Number(parsed.realizedPnl) || 0,
+            unrealizedPnl: Number(parsed.unrealizedPnl) || 0,
+            totalTrades: Number(parsed.totalTrades) || 0,
+            wins: Number(parsed.wins) || 0,
+            losses: Number(parsed.losses) || 0,
+            winRate: Number(parsed.winRate) || 0,
+            profitFactor: Number(parsed.profitFactor) || 0
+          };
+        }
+      }
+    } catch (e) {}
+    return defaultAcc;
   }
 
   private loadPositions(): PaperPosition[] {
@@ -85,11 +106,34 @@ export class PaperTradingEngine {
     return [];
   }
 
-  private save() {
+  private saveTimeout: any = null;
+
+  public saveImmediate() {
+    if (this.saveTimeout) {
+      clearTimeout(this.saveTimeout);
+      this.saveTimeout = null;
+    }
+    this.executeSave();
+  }
+
+  private save(immediate: boolean = false) {
+    if (immediate) {
+      this.saveImmediate();
+      return;
+    }
+    if (!this.saveTimeout) {
+      this.saveTimeout = setTimeout(() => {
+        this.saveTimeout = null;
+        this.executeSave();
+      }, 1500);
+    }
+  }
+
+  private executeSave() {
     try {
       localStorage.setItem(ACCOUNT_KEY, JSON.stringify(this.account));
       localStorage.setItem(POSITIONS_KEY, JSON.stringify(this.positions));
-      localStorage.setItem(ORDERS_KEY, JSON.stringify(this.orders.slice(0, 300))); // keep latest 300 orders
+      localStorage.setItem(ORDERS_KEY, JSON.stringify(this.orders.slice(0, 150)));
     } catch (e) {}
   }
 

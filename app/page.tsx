@@ -21,6 +21,8 @@ import { SignalRadarTable } from '../components/SignalRadarTable';
 import { BacktestModal } from '../components/BacktestModal';
 import { StrategySettingsModal } from '../components/StrategySettingsModal';
 import { ManualAnalysisModal } from '../components/ManualAnalysisModal';
+import { ErrorBoundary } from '../components/ErrorBoundary';
+import { formatPrice } from '../lib/indicators';
 
 const DEFAULT_CONFIG: StrategyConfig = {
   activeStrategy: 'ORDER_BLOCKS_EMA',
@@ -175,12 +177,19 @@ export default function DashboardPage() {
     loadPairData(selectedSymbol, currentTf);
   }, [selectedSymbol, currentTf]);
 
+  const selectedSymbolRef = useRef(selectedSymbol);
+  selectedSymbolRef.current = selectedSymbol;
+
+  const configRef = useRef(config);
+  configRef.current = config;
+
   // Main 24/7 Unlimited Perpetual Pairs Scanner Loop
   useEffect(() => {
     let isCancelled = false;
 
     const runScannerLoop = async () => {
       let currentIndex = 0;
+      let lastTableRenderTime = 0;
 
       while (!isCancelled) {
         setIsScanning(true);
@@ -188,43 +197,52 @@ export default function DashboardPage() {
 
         if (currentIndex >= pairsToScan.length) {
           currentIndex = 0;
+          // Refresh table fully at end of cycle
+          const sorted = Array.from(signalsMapRef.current.values()).sort(
+            (a, b) => b.strengthScore - a.strengthScore
+          );
+          if (!isCancelled) setSignals(sorted);
           // Short pause before next continuous sweep cycle
           await new Promise((r) => setTimeout(r, 2000));
         }
 
         const sym = pairsToScan[currentIndex];
-        setCurrentScanningSymbol(sym);
-        setScanProgress(Math.round(((currentIndex + 1) / pairsToScan.length) * 100));
+        if (!isCancelled) {
+          setCurrentScanningSymbol(sym);
+          setScanProgress(Math.round(((currentIndex + 1) / pairsToScan.length) * 100));
+        }
 
         try {
           const candles = await fetchKlines(sym, currentTf, 80);
-          if (candles.length >= 35) {
+          if (!isCancelled && candles.length >= 35) {
             const latestCandle = candles[candles.length - 1];
+            const currentCfg = configRef.current;
+            const currentActiveSym = selectedSymbolRef.current;
 
             // Update open positions ticks in paper engine
             paperEngine.updatePositionsWithTick(sym, latestCandle.c, latestCandle.h, latestCandle.l);
 
-            if (sym === selectedSymbol) {
+            if (sym === currentActiveSym) {
               setActiveCandles(candles);
               setCurrentPrice(latestCandle.c);
             }
 
             // Evaluate strategy
             let sig: QuantSignal | null = null;
-            if (config.activeStrategy === 'ORDER_BLOCKS_EMA') {
-              sig = evaluateOrderBlocksEmaStrategy(candles, sym, currentTf, config);
-            } else if (config.activeStrategy === 'VWAP_EMA') {
-              sig = evaluateVwapEmaStrategy(candles, sym, currentTf, config);
+            if (currentCfg.activeStrategy === 'ORDER_BLOCKS_EMA') {
+              sig = evaluateOrderBlocksEmaStrategy(candles, sym, currentTf, currentCfg);
+            } else if (currentCfg.activeStrategy === 'VWAP_EMA') {
+              sig = evaluateVwapEmaStrategy(candles, sym, currentTf, currentCfg);
             } else {
-              sig = evaluateOrderBlocksEmaStrategy(candles, sym, currentTf, config) ||
-                    evaluateVwapEmaStrategy(candles, sym, currentTf, config);
+              sig = evaluateOrderBlocksEmaStrategy(candles, sym, currentTf, currentCfg) ||
+                    evaluateVwapEmaStrategy(candles, sym, currentTf, currentCfg);
             }
 
             // If no immediate strict cross, create ambient radar baseline reading so all pairs are scored
             if (!sig) {
               const closes = candles.map((c) => c.c);
-              const emaFastArr = calcEMA(closes, config.fastMA);
-              const emaSlowArr = calcEMA(closes, config.slowMA);
+              const emaFastArr = calcEMA(closes, currentCfg.fastMA);
+              const emaSlowArr = calcEMA(closes, currentCfg.slowMA);
               const atrArr = calcATR(candles, 14);
               const rsiArr = calcRSI(closes, 14);
               const vwapArr = calcVWAP(candles);
@@ -247,10 +265,10 @@ export default function DashboardPage() {
               if (isBull && rsiVal > 52) baseScore += 8;
               if (!isBull && rsiVal < 48) baseScore += 8;
 
-              const slPrice = isBull ? latestCandle.c - atrVal * config.atrMultiplierSL : latestCandle.c + atrVal * config.atrMultiplierSL;
-              const tp1Price = isBull ? latestCandle.c + atrVal * config.tp1Multiplier : latestCandle.c - atrVal * config.tp1Multiplier;
-              const tp2Price = isBull ? latestCandle.c + atrVal * config.tp2Multiplier : latestCandle.c - atrVal * config.tp2Multiplier;
-              const tp3Price = isBull ? latestCandle.c + atrVal * config.tp3Multiplier : latestCandle.c - atrVal * config.tp3Multiplier;
+              const slPrice = isBull ? latestCandle.c - atrVal * currentCfg.atrMultiplierSL : latestCandle.c + atrVal * currentCfg.atrMultiplierSL;
+              const tp1Price = isBull ? latestCandle.c + atrVal * currentCfg.tp1Multiplier : latestCandle.c - atrVal * currentCfg.tp1Multiplier;
+              const tp2Price = isBull ? latestCandle.c + atrVal * currentCfg.tp2Multiplier : latestCandle.c - atrVal * currentCfg.tp2Multiplier;
+              const tp3Price = isBull ? latestCandle.c + atrVal * currentCfg.tp3Multiplier : latestCandle.c - atrVal * currentCfg.tp3Multiplier;
 
               sig = {
                 id: `scan_${sym}_${Date.now()}`,
@@ -264,7 +282,7 @@ export default function DashboardPage() {
                 tp2Price,
                 tp3Price,
                 strengthScore: Math.min(baseScore, 92),
-                strategyName: config.activeStrategy,
+                strategyName: currentCfg.activeStrategy,
                 timestamp: Date.now(),
                 metrics: {
                   buyerStrength: isBull ? 68 : 32,
@@ -279,20 +297,27 @@ export default function DashboardPage() {
               };
             }
 
-            if (sig) {
+            if (sig && !isCancelled) {
               signalsMapRef.current.set(sym, sig);
-              setLatestSignal(sig);
 
-              // Update the list of signals displayed in table (sorted by score descending)
-              const sorted = Array.from(signalsMapRef.current.values()).sort(
-                (a, b) => b.strengthScore - a.strengthScore
-              );
-              setSignals(sorted);
+              if (sym === currentActiveSym || sig.strengthScore >= 80) {
+                setLatestSignal(sig);
+              }
+
+              // Throttle table updates to at most once every 1200ms to preserve UI responsiveness & avoid tab crashes
+              const now = Date.now();
+              if (now - lastTableRenderTime > 1200) {
+                lastTableRenderTime = now;
+                const sorted = Array.from(signalsMapRef.current.values()).sort(
+                  (a, b) => b.strengthScore - a.strengthScore
+                );
+                setSignals(sorted);
+              }
 
               // Auto-fill order if auto-trade enabled and score matches threshold
-              if (sig.strengthScore >= config.minScoreToExecute) {
-                const didFill = paperEngine.handleSignalAutoTrade(sig, config);
-                if (didFill && config.soundEnabled) {
+              if (currentCfg.autoTradeEnabled && sig.strengthScore >= currentCfg.minScoreToExecute) {
+                const didFill = paperEngine.handleSignalAutoTrade(sig, currentCfg);
+                if (didFill && currentCfg.soundEnabled) {
                   playSignalChime(sig.direction);
                 }
               }
@@ -314,7 +339,7 @@ export default function DashboardPage() {
     return () => {
       isCancelled = true;
     };
-  }, [config, availablePairs, selectedSymbol, currentTf]);
+  }, [availablePairs, currentTf]);
 
   const selectedSignal = signalsMapRef.current.get(selectedSymbol) || signals.find((s) => s.symbol === selectedSymbol) || null;
 
@@ -343,13 +368,13 @@ export default function DashboardPage() {
           <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 mt-1 shrink-0 animate-ping" />
           <div className="font-mono text-xs">
             <span className="font-bold text-white block">
-              ⚡ LIVE SIMULATION ORDER FILLED: #{fillToast.id.slice(-6)}
+              ⚡ LIVE SIMULATION ORDER FILLED: #{fillToast.id?.slice(-6) || 'FILLED'}
             </span>
             <p className="text-emerald-300 mt-0.5">
-              {fillToast.type} {fillToast.direction} {fillToast.symbol} @ ${fillToast.fillPrice.toFixed(4)}
+              {fillToast.type} {fillToast.direction} {fillToast.symbol} @ ${formatPrice(fillToast.fillPrice)}
             </p>
             <span className="text-[10px] text-slate-400 block mt-1">
-              Margin: ${fillToast.margin.toFixed(2)} · {fillToast.leverage}x Lev · Slippage: 0.02%
+              Margin: ${(fillToast.margin || 0).toFixed(2)} · {fillToast.leverage}x Lev · Slippage: 0.02%
             </span>
           </div>
         </div>
@@ -358,84 +383,94 @@ export default function DashboardPage() {
       {/* Main Container */}
       <main className="max-w-[1720px] w-full mx-auto px-3 sm:px-5 py-4 flex flex-col gap-4">
         {/* 2D Pacman Flare Strip */}
-        <PacmanQuantStrip
-          lastDirection={latestSignal?.direction || 'LONG'}
-          activePairsCount={availablePairs.length}
-          openPositionsCount={positions.length}
-        />
+        <ErrorBoundary>
+          <PacmanQuantStrip
+            lastDirection={latestSignal?.direction || 'LONG'}
+            activePairsCount={availablePairs.length}
+            openPositionsCount={positions.length}
+          />
+        </ErrorBoundary>
 
         {/* Top Split: Grok Quant Telemetry Feed & Order Blocks Visualizer Chart */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
           {/* Grok Quant Stream (5 cols on desktop) */}
           <div className="lg:col-span-5">
-            <GrokQuantFeed
-              latestSignal={latestSignal}
-              latestFill={latestFill}
-              strategyName={config.activeStrategy}
-            />
+            <ErrorBoundary>
+              <GrokQuantFeed
+                latestSignal={latestSignal}
+                latestFill={latestFill}
+                strategyName={config.activeStrategy}
+              />
+            </ErrorBoundary>
           </div>
 
           {/* Candlestick & Volumetric Order Blocks Chart (7 cols on desktop) */}
           <div className="lg:col-span-7">
-            <OrderBlocksChart
-              candles={activeCandles}
-              symbol={selectedSymbol}
-              timeframe={currentTf}
-              orderBlocks={selectedSignal?.orderBlocks || []}
-              signal={selectedSignal}
-              fastMA={config.fastMA}
-              slowMA={config.slowMA}
-              onSelectTimeframe={handleSelectTimeframe}
-            />
+            <ErrorBoundary>
+              <OrderBlocksChart
+                candles={activeCandles}
+                symbol={selectedSymbol}
+                timeframe={currentTf}
+                orderBlocks={selectedSignal?.orderBlocks || []}
+                signal={selectedSignal}
+                fastMA={config.fastMA}
+                slowMA={config.slowMA}
+                onSelectTimeframe={handleSelectTimeframe}
+              />
+            </ErrorBoundary>
           </div>
         </div>
 
         {/* Center: Paper Execution Cockpit (Proves Orders Actually Fill!) */}
-        <PaperTradingDesk
-          account={account}
-          positions={positions}
-          orders={orders}
-          config={config}
-          onUpdateConfig={updateConfig}
-          selectedSymbol={selectedSymbol}
-          currentPrice={currentPrice}
-          currentAtr={currentAtr}
-          timeframe={currentTf}
-          onSelectTimeframe={handleSelectTimeframe}
-          onOpenManualAnalysis={handleOpenManualAnalysis}
-        />
+        <ErrorBoundary>
+          <PaperTradingDesk
+            account={account}
+            positions={positions}
+            orders={orders}
+            config={config}
+            onUpdateConfig={updateConfig}
+            selectedSymbol={selectedSymbol}
+            currentPrice={currentPrice}
+            currentAtr={currentAtr}
+            timeframe={currentTf}
+            onSelectTimeframe={handleSelectTimeframe}
+            onOpenManualAnalysis={handleOpenManualAnalysis}
+          />
+        </ErrorBoundary>
 
         {/* Bottom: 24/7 Binance Futures Signal Radar Table (Scanning all available pairs) */}
-        <SignalRadarTable
-          signals={signals}
-          onSelectPair={(sym) => {
-            setSelectedSymbol(sym);
-            loadPairData(sym, currentTf);
-          }}
-          onInstantTrade={(sig) => {
-            setSelectedSymbol(sig.symbol);
-            paperEngine.openPosition(
-              sig.symbol,
-              sig.direction,
-              sig.entryPrice,
-              config.defaultMargin,
-              config.defaultLeverage,
-              sig.slPrice,
-              sig.tp1Price,
-              sig.tp2Price,
-              sig.tp3Price,
-              'RADAR_1CLICK'
-            );
-          }}
-          onOpenManualAnalysis={handleOpenManualAnalysis}
-          selectedSymbol={selectedSymbol}
-          isScanning={isScanning}
-          scanProgress={scanProgress}
-          totalMonitoredPairs={availablePairs.length}
-          currentScanningSymbol={currentScanningSymbol}
-          timeframe={currentTf}
-          onSelectTimeframe={handleSelectTimeframe}
-        />
+        <ErrorBoundary>
+          <SignalRadarTable
+            signals={signals}
+            onSelectPair={(sym) => {
+              setSelectedSymbol(sym);
+              loadPairData(sym, currentTf);
+            }}
+            onInstantTrade={(sig) => {
+              setSelectedSymbol(sig.symbol);
+              paperEngine.openPosition(
+                sig.symbol,
+                sig.direction,
+                sig.entryPrice,
+                config.defaultMargin,
+                config.defaultLeverage,
+                sig.slPrice,
+                sig.tp1Price,
+                sig.tp2Price,
+                sig.tp3Price,
+                'RADAR_1CLICK'
+              );
+            }}
+            onOpenManualAnalysis={handleOpenManualAnalysis}
+            selectedSymbol={selectedSymbol}
+            isScanning={isScanning}
+            scanProgress={scanProgress}
+            totalMonitoredPairs={availablePairs.length}
+            currentScanningSymbol={currentScanningSymbol}
+            timeframe={currentTf}
+            onSelectTimeframe={handleSelectTimeframe}
+          />
+        </ErrorBoundary>
       </main>
 
       {/* Modals */}

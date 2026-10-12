@@ -64,14 +64,19 @@ export const OrderBlocksChart: React.FC<OrderBlocksChartProps> = ({
 
   const height = 280;
   const width = 680;
+  const candleCount = Math.max(visibleCandles.length, 1);
+  const candleWidth = width / candleCount;
 
   const getY = (val: number) => {
+    if (typeof val !== 'number' || isNaN(val) || priceRange === 0) return height / 2;
     return height - ((val - minPrice) / priceRange) * height;
   };
 
   const activeCandle = hoveredIndex !== null && visibleCandles[hoveredIndex]
     ? visibleCandles[hoveredIndex]
-    : visibleCandles[visibleCandles.length - 1];
+    : visibleCandles.length > 0
+    ? visibleCandles[visibleCandles.length - 1]
+    : null;
 
   return (
     <div className="bg-[#080d1a] border border-cyan-500/20 rounded-xl p-3 sm:p-4 shadow-xl flex flex-col gap-2">

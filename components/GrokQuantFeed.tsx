@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Bot, Terminal, ShieldAlert, Zap, Radio, CheckCircle2 } from 'lucide-react';
 import { PaperOrder, QuantSignal } from '../lib/types';
+import { formatPrice } from '../lib/indicators';
 
 interface GrokLogEntry {
   id: string;
@@ -51,7 +52,7 @@ export const GrokQuantFeed: React.FC<GrokQuantFeedProps> = ({
   useEffect(() => {
     if (!latestSignal) return;
     const time = new Date(latestSignal.timestamp).toLocaleTimeString();
-    const isOB = latestSignal.metrics.orderBlockNearby;
+    const isOB = latestSignal.metrics?.orderBlockNearby;
     const obText = isOB ? 'inside active Volumetric Order Block zone' : 'trend momentum expansion';
 
     const newEntry: GrokLogEntry = {
@@ -60,7 +61,7 @@ export const GrokQuantFeed: React.FC<GrokQuantFeedProps> = ({
       type: 'ANALYSIS',
       symbol: latestSignal.symbol,
       score: latestSignal.strengthScore,
-      message: `${latestSignal.direction} signal detected on ${latestSignal.timeframe} (${obText}). Score: ${latestSignal.strengthScore}/100. SL: $${latestSignal.slPrice.toFixed(2)} | TP1: $${latestSignal.tp1Price.toFixed(2)}`
+      message: `${latestSignal.direction} signal detected on ${latestSignal.timeframe} (${obText}). Score: ${latestSignal.strengthScore}/100. SL: $${formatPrice(latestSignal.slPrice)} | TP1: $${formatPrice(latestSignal.tp1Price)}`
     };
 
     setLogs(prev => [newEntry, ...prev.slice(0, 40)]);
@@ -75,7 +76,7 @@ export const GrokQuantFeed: React.FC<GrokQuantFeedProps> = ({
       timestamp: time,
       type: 'ORDER_FILL',
       symbol: latestFill.symbol,
-      message: `FILL CONFIRMED: ${latestFill.type} ${latestFill.direction} ${latestFill.symbol} @ $${latestFill.fillPrice.toFixed(4)} (Margin: $${latestFill.margin.toFixed(2)} | ${latestFill.leverage}x). Order ID: #${latestFill.id.slice(-6)}`
+      message: `FILL CONFIRMED: ${latestFill.type} ${latestFill.direction} ${latestFill.symbol} @ $${formatPrice(latestFill.fillPrice)} (Margin: $${(latestFill.margin || 0).toFixed(2)} | ${latestFill.leverage}x). Order ID: #${(latestFill.id || '').slice(-6)}`
     };
 
     setLogs(prev => [newEntry, ...prev.slice(0, 40)]);
