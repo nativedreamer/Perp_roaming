@@ -29,6 +29,8 @@ interface PaperTradingDeskProps {
   selectedSymbol: string;
   currentPrice: number;
   currentAtr: number;
+  timeframe?: string;
+  onSelectTimeframe?: (tf: string) => void;
   onOpenManualAnalysis?: (symbol: string) => void;
 }
 
@@ -41,12 +43,16 @@ export const PaperTradingDesk: React.FC<PaperTradingDeskProps> = ({
   selectedSymbol,
   currentPrice,
   currentAtr,
+  timeframe = '5m',
+  onSelectTimeframe,
   onOpenManualAnalysis
 }) => {
   const [tradeDirection, setTradeDirection] = useState<'LONG' | 'SHORT'>('LONG');
   const [tradeMargin, setTradeMargin] = useState<number>(100);
   const [tradeLeverage, setTradeLeverage] = useState<number>(10);
   const [activeTab, setActiveTab] = useState<'POSITIONS' | 'LEDGER' | 'EXECUTE'>('POSITIONS');
+
+  const TIMEFRAMES = ['1m', '3m', '5m', '15m', '30m', '1h', '4h', '1d'];
 
   // Instant Manual Paper Trade Submission
   const handleInstantTrade = (direction: 'LONG' | 'SHORT') => {
@@ -112,10 +118,13 @@ export const PaperTradingDesk: React.FC<PaperTradingDeskProps> = ({
         <div className="flex items-center gap-2">
           <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
           <div>
-            <h2 className="font-mono text-sm font-bold text-white tracking-wide flex items-center gap-2">
+            <h2 className="font-mono text-sm font-bold text-white tracking-wide flex items-center gap-2 flex-wrap">
               PAPER EXECUTION COCKPIT
               <span className="text-[10px] font-normal px-2 py-0.5 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-500/30">
                 LIVE ORDER FILLS VERIFIED
+              </span>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-950/80 text-cyan-300 border border-cyan-500/30 flex items-center gap-1">
+                <Clock className="w-2.5 h-2.5" /> TF: {timeframe}
               </span>
             </h2>
             <p className="text-[11px] text-slate-400 font-mono">
@@ -126,6 +135,26 @@ export const PaperTradingDesk: React.FC<PaperTradingDeskProps> = ({
 
         {/* Global Controls */}
         <div className="flex items-center gap-2 flex-wrap">
+          {/* Timeframe Switcher in Desk */}
+          {onSelectTimeframe && (
+            <div className="flex items-center bg-[#050811] p-0.5 rounded-lg border border-slate-800 text-xs font-mono">
+              <span className="text-[10px] text-slate-500 px-1.5 uppercase font-bold hidden sm:inline">Execution TF:</span>
+              {TIMEFRAMES.slice(0, 5).map((tf) => (
+                <button
+                  key={tf}
+                  onClick={() => onSelectTimeframe(tf)}
+                  className={`px-2 py-1 rounded text-[11px] font-medium transition-colors ${
+                    timeframe === tf
+                      ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-bold'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  {tf}
+                </button>
+              ))}
+            </div>
+          )}
+
           {/* Auto Trade Switch */}
           <button
             onClick={() => onUpdateConfig({ autoTradeEnabled: !config.autoTradeEnabled })}

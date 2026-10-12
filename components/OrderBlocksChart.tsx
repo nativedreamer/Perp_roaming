@@ -12,6 +12,7 @@ interface OrderBlocksChartProps {
   signal?: QuantSignal | null;
   fastMA?: number;
   slowMA?: number;
+  onSelectTimeframe?: (tf: string) => void;
 }
 
 export const OrderBlocksChart: React.FC<OrderBlocksChartProps> = ({
@@ -21,9 +22,12 @@ export const OrderBlocksChart: React.FC<OrderBlocksChartProps> = ({
   orderBlocks = [],
   signal = null,
   fastMA = 10,
-  slowMA = 30
+  slowMA = 30,
+  onSelectTimeframe
 }) => {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+
+  const TIMEFRAMES = ['1m', '3m', '5m', '15m', '30m', '1h', '4h', '1d'];
 
   // Compute Fast and Slow EMA arrays
   const closes = useMemo(() => candles.map(c => c.c), [candles]);
@@ -60,7 +64,6 @@ export const OrderBlocksChart: React.FC<OrderBlocksChartProps> = ({
 
   const height = 280;
   const width = 680;
-  const candleWidth = width / Math.max(visibleCandles.length, 1);
 
   const getY = (val: number) => {
     return height - ((val - minPrice) / priceRange) * height;
@@ -73,13 +76,31 @@ export const OrderBlocksChart: React.FC<OrderBlocksChartProps> = ({
   return (
     <div className="bg-[#080d1a] border border-cyan-500/20 rounded-xl p-3 sm:p-4 shadow-xl flex flex-col gap-2">
       {/* Top Chart Header */}
-      <div className="flex items-center justify-between pb-2 border-b border-slate-800 text-xs font-mono">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-800 text-xs font-mono">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
           <div className="flex items-center gap-1.5">
             <span className="text-sm font-bold text-white">{symbol}</span>
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-cyan-300 border border-slate-700">
-              {timeframe}
-            </span>
+            {onSelectTimeframe ? (
+              <div className="flex items-center bg-[#040712] rounded-lg p-0.5 border border-slate-800">
+                {TIMEFRAMES.map((tf) => (
+                  <button
+                    key={tf}
+                    onClick={() => onSelectTimeframe(tf)}
+                    className={`px-1.5 py-0.5 rounded text-[10px] font-bold transition-all ${
+                      timeframe === tf
+                        ? 'bg-cyan-500 text-black shadow-[0_0_8px_rgba(0,240,255,0.4)]'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    {tf}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-cyan-300 border border-slate-700">
+                {timeframe}
+              </span>
+            )}
           </div>
 
           {activeCandle && (
@@ -92,7 +113,7 @@ export const OrderBlocksChart: React.FC<OrderBlocksChartProps> = ({
           )}
         </div>
 
-        <div className="flex items-center gap-3 text-[10px]">
+        <div className="flex items-center gap-2 sm:gap-3 text-[10px]">
           <span className="flex items-center gap-1 text-emerald-400">
             <span className="w-2.5 h-0.5 bg-emerald-400 inline-block" /> EMA {fastMA}
           </span>

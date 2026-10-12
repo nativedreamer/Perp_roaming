@@ -153,6 +153,8 @@ export interface StrategyConfig {
   riskPerTradePct: number; // 1%
   slippageBps: number; // 2 bps (0.02%)
   commissionRatePct: number; // 0.02%
+  // Scanner & Paper Execution timeframe
+  scannerTimeframe: string; // '1m' | '3m' | '5m' | '15m' | '30m' | '1h' | '4h' | '1d'
   soundEnabled: boolean;
 }
 

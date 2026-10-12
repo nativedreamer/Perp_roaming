@@ -94,6 +94,27 @@ export const StrategySettingsModal: React.FC<StrategySettingsModalProps> = ({
               <Sliders className="w-3.5 h-3.5 text-cyan-400" /> Signal & Indicator Inputs
             </h4>
 
+            {/* Timeframe option */}
+            <div>
+              <label className="text-[10px] text-slate-400 block mb-1 uppercase font-bold">Default Screener & Execution Timeframe</label>
+              <div className="grid grid-cols-4 sm:grid-cols-8 gap-1.5">
+                {['1m', '3m', '5m', '15m', '30m', '1h', '4h', '1d'].map((tf) => (
+                  <button
+                    key={tf}
+                    type="button"
+                    onClick={() => onUpdateConfig({ scannerTimeframe: tf })}
+                    className={`py-1 rounded text-center text-xs font-bold border transition-colors ${
+                      (config.scannerTimeframe || '5m') === tf
+                        ? 'bg-cyan-500 text-black border-cyan-400 shadow-[0_0_8px_rgba(0,240,255,0.4)]'
+                        : 'bg-[#0a0f1d] border-slate-800 text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    {tf}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div>
                 <label className="text-[10px] text-slate-400 block mb-1">Fast EMA</label>

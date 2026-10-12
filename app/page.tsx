@@ -48,6 +48,7 @@ const DEFAULT_CONFIG: StrategyConfig = {
   riskPerTradePct: 1,
   slippageBps: 2,
   commissionRatePct: 0.02,
+  scannerTimeframe: '5m',
   soundEnabled: true
 };
 
@@ -133,6 +134,8 @@ export default function DashboardPage() {
     };
   }, [config.soundEnabled]);
 
+  const currentTf = config.scannerTimeframe || '5m';
+
   const updateConfig = (newConfig: Partial<StrategyConfig>) => {
     const updated = { ...config, ...newConfig };
     setConfig(updated);
@@ -141,10 +144,19 @@ export default function DashboardPage() {
     } catch {}
   };
 
+  const handleSelectTimeframe = (newTf: string) => {
+    if (newTf === currentTf) return;
+    // Clear signals radar cache so new timeframe calculations populate fresh
+    signalsMapRef.current.clear();
+    setSignals([]);
+    updateConfig({ scannerTimeframe: newTf });
+    loadPairData(selectedSymbol, newTf);
+  };
+
   // Fetch candles for the actively selected pair
-  const loadPairData = async (symbol: string) => {
+  const loadPairData = async (symbol: string, tf: string = currentTf) => {
     try {
-      const candles = await fetchKlines(symbol, '5m', 120);
+      const candles = await fetchKlines(symbol, tf, 120);
       if (candles.length > 0) {
         setActiveCandles(candles);
         const latest = candles[candles.length - 1];
@@ -160,8 +172,8 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    loadPairData(selectedSymbol);
-  }, [selectedSymbol]);
+    loadPairData(selectedSymbol, currentTf);
+  }, [selectedSymbol, currentTf]);
 
   // Main 24/7 Unlimited Perpetual Pairs Scanner Loop
   useEffect(() => {
@@ -185,7 +197,7 @@ export default function DashboardPage() {
         setScanProgress(Math.round(((currentIndex + 1) / pairsToScan.length) * 100));
 
         try {
-          const candles = await fetchKlines(sym, '5m', 80);
+          const candles = await fetchKlines(sym, currentTf, 80);
           if (candles.length >= 35) {
             const latestCandle = candles[candles.length - 1];
 
@@ -200,12 +212,12 @@ export default function DashboardPage() {
             // Evaluate strategy
             let sig: QuantSignal | null = null;
             if (config.activeStrategy === 'ORDER_BLOCKS_EMA') {
-              sig = evaluateOrderBlocksEmaStrategy(candles, sym, '5m', config);
+              sig = evaluateOrderBlocksEmaStrategy(candles, sym, currentTf, config);
             } else if (config.activeStrategy === 'VWAP_EMA') {
-              sig = evaluateVwapEmaStrategy(candles, sym, '5m', config);
+              sig = evaluateVwapEmaStrategy(candles, sym, currentTf, config);
             } else {
-              sig = evaluateOrderBlocksEmaStrategy(candles, sym, '5m', config) ||
-                    evaluateVwapEmaStrategy(candles, sym, '5m', config);
+              sig = evaluateOrderBlocksEmaStrategy(candles, sym, currentTf, config) ||
+                    evaluateVwapEmaStrategy(candles, sym, currentTf, config);
             }
 
             // If no immediate strict cross, create ambient radar baseline reading so all pairs are scored
@@ -244,7 +256,7 @@ export default function DashboardPage() {
                 id: `scan_${sym}_${Date.now()}`,
                 symbol: sym,
                 direction,
-                timeframe: '5m',
+                timeframe: currentTf,
                 entryPrice: latestCandle.c,
                 currentPrice: latestCandle.c,
                 slPrice,
@@ -302,7 +314,7 @@ export default function DashboardPage() {
     return () => {
       isCancelled = true;
     };
-  }, [config, availablePairs, selectedSymbol]);
+  }, [config, availablePairs, selectedSymbol, currentTf]);
 
   const selectedSignal = signalsMapRef.current.get(selectedSymbol) || signals.find((s) => s.symbol === selectedSymbol) || null;
 
@@ -321,6 +333,7 @@ export default function DashboardPage() {
         onOpenBacktest={() => setIsBacktestOpen(true)}
         onOpenManualAnalysis={() => handleOpenManualAnalysis(selectedSymbol)}
         onToggleSound={() => updateConfig({ soundEnabled: !config.soundEnabled })}
+        onSelectTimeframe={handleSelectTimeframe}
         activeScanCount={availablePairs.length}
       />
 
@@ -367,11 +380,12 @@ export default function DashboardPage() {
             <OrderBlocksChart
               candles={activeCandles}
               symbol={selectedSymbol}
-              timeframe="5m"
+              timeframe={currentTf}
               orderBlocks={selectedSignal?.orderBlocks || []}
               signal={selectedSignal}
               fastMA={config.fastMA}
               slowMA={config.slowMA}
+              onSelectTimeframe={handleSelectTimeframe}
             />
           </div>
         </div>
@@ -386,6 +400,8 @@ export default function DashboardPage() {
           selectedSymbol={selectedSymbol}
           currentPrice={currentPrice}
           currentAtr={currentAtr}
+          timeframe={currentTf}
+          onSelectTimeframe={handleSelectTimeframe}
           onOpenManualAnalysis={handleOpenManualAnalysis}
         />
 
@@ -394,7 +410,7 @@ export default function DashboardPage() {
           signals={signals}
           onSelectPair={(sym) => {
             setSelectedSymbol(sym);
-            loadPairData(sym);
+            loadPairData(sym, currentTf);
           }}
           onInstantTrade={(sig) => {
             setSelectedSymbol(sig.symbol);
@@ -417,6 +433,8 @@ export default function DashboardPage() {
           scanProgress={scanProgress}
           totalMonitoredPairs={availablePairs.length}
           currentScanningSymbol={currentScanningSymbol}
+          timeframe={currentTf}
+          onSelectTimeframe={handleSelectTimeframe}
         />
       </main>
 

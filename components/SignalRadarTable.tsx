@@ -23,6 +23,8 @@ interface SignalRadarTableProps {
   scanProgress: number;
   totalMonitoredPairs?: number;
   currentScanningSymbol?: string;
+  timeframe?: string;
+  onSelectTimeframe?: (tf: string) => void;
 }
 
 export const SignalRadarTable: React.FC<SignalRadarTableProps> = ({
@@ -34,10 +36,14 @@ export const SignalRadarTable: React.FC<SignalRadarTableProps> = ({
   isScanning,
   scanProgress,
   totalMonitoredPairs = 120,
-  currentScanningSymbol
+  currentScanningSymbol,
+  timeframe = '5m',
+  onSelectTimeframe
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<'ALL' | 'LONG' | 'SHORT' | 'OB' | 'HIGH_SCORE'>('ALL');
+
+  const TIMEFRAMES = ['1m', '3m', '5m', '15m', '30m', '1h', '4h', '1d'];
 
   const filteredSignals = signals.filter(sig => {
     if (searchQuery && !sig.symbol.toLowerCase().includes(searchQuery.toLowerCase())) {
@@ -53,24 +59,46 @@ export const SignalRadarTable: React.FC<SignalRadarTableProps> = ({
   return (
     <div className="bg-[#080d1a] border border-cyan-500/20 rounded-xl p-3 sm:p-5 shadow-xl flex flex-col gap-3">
       {/* Top Controls Toolbar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2 border-b border-slate-800">
-        <div className="flex items-center gap-2">
-          <div className="relative">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5 pb-2 border-b border-slate-800">
+        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+          <div className="relative w-full sm:w-auto">
             <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               placeholder="Search perpetual pair (e.g. BTC, SOL)..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              className="bg-[#050811] border border-slate-800 rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-500 font-mono focus:border-cyan-400 outline-none w-52"
+              className="bg-[#050811] border border-slate-800 rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-500 font-mono focus:border-cyan-400 outline-none w-full sm:w-56"
             />
           </div>
 
+          {/* Timeframe Selector Pill in Scanner Table */}
+          {onSelectTimeframe && (
+            <div className="flex items-center bg-[#050811] rounded-lg p-0.5 border border-slate-800 font-mono text-xs">
+              <span className="text-[10px] text-slate-500 px-1.5 uppercase font-bold hidden sm:inline">Scanner TF:</span>
+              <div className="flex items-center gap-0.5">
+                {TIMEFRAMES.map((tf) => (
+                  <button
+                    key={tf}
+                    onClick={() => onSelectTimeframe(tf)}
+                    className={`px-1.5 py-0.5 rounded text-[11px] font-bold transition-all ${
+                      timeframe === tf
+                        ? 'bg-cyan-500 text-black shadow-[0_0_8px_rgba(0,240,255,0.35)]'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    {tf}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Continuous Sweep Progress & Status */}
-          <div className="hidden md:flex items-center gap-2 font-mono text-[11px] text-slate-400">
+          <div className="hidden xl:flex items-center gap-2 font-mono text-[11px] text-slate-400">
             <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
             <span>
-              24/7 SCREENER: <strong className="text-white">{signals.length}</strong> ACTIVE / <strong className="text-cyan-300">{totalMonitoredPairs}</strong> PERP PAIRS
+              24/7 SCREENER ({timeframe}): <strong className="text-white">{signals.length}</strong> ACTIVE / <strong className="text-cyan-300">{totalMonitoredPairs}</strong> PERP PAIRS
               {currentScanningSymbol && <span className="text-slate-500"> (Sweeping: {currentScanningSymbol})</span>}
             </span>
             <div className="w-16 h-1.5 bg-slate-800 rounded-full overflow-hidden">
@@ -83,7 +111,7 @@ export const SignalRadarTable: React.FC<SignalRadarTableProps> = ({
         </div>
 
         {/* Filter buttons & Manual Analysis CTA */}
-        <div className="flex items-center gap-1.5 font-mono text-xs overflow-x-auto pb-1 sm:pb-0">
+        <div className="flex items-center gap-1.5 font-mono text-xs overflow-x-auto pb-1 lg:pb-0">
           {onOpenManualAnalysis && (
             <button
               onClick={() => onOpenManualAnalysis(selectedSymbol)}
