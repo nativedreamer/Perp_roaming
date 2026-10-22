@@ -1,4 +1,4 @@
-import { Candle } from './types';
+import type { Candle } from './types';
 
 /**
  * Calculates Exponential Moving Average (EMA)
