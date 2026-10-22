@@ -26,7 +26,10 @@ async function fetchFuturesCandles(symbol: string, interval: string, limit: numb
   const timeout = setTimeout(() => controller.abort(), 8000);
   try {
     const url = `https://fapi.binance.com/fapi/v1/klines?symbol=${encodeURIComponent(symbol)}&interval=${interval}&limit=${limit}`;
-    const response = await fetch(url, { headers: { accept: 'application/json' }, signal: controller.signal });
+    const response = await Promise.race([
+      fetch(url, { headers: { accept: 'application/json' }, signal: controller.signal }),
+      new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Binance Futures request timed out')), 8000))
+    ]);
     if (!response.ok) throw new Error(`Binance returned ${response.status}`);
     const candles = parseCandles(await response.json());
     if (!candles || candles.length === 0) throw new Error('No futures candles returned');
