@@ -1,5 +1,9 @@
 import { evaluateLeo21Strategy } from '../../lib/strategies/leo21Strategy';
-import { Candle } from '../../lib/types';
+import type { Candle } from '../../lib/types';
+
+export const config = {
+  runtime: 'nodejs20.x'
+};
 
 const ALLOWED_INTERVALS = new Set(['1m', '3m', '5m', '15m', '30m', '1h', '4h', '1d']);
 
