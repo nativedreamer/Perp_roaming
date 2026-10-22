@@ -1,6 +1,3 @@
-import { evaluateLeo21Strategy } from '../../lib/strategies/leo21Strategy';
-import type { Candle } from '../../lib/types';
-
 export const config = { runtime: 'nodejs' };
 const ALLOWED_INTERVALS = new Set(['1m', '3m', '5m', '15m', '30m', '1h', '4h', '1d']);
 const corsHeaders = {
@@ -16,7 +13,7 @@ function normalizeSymbol(value: unknown): string {
   return symbol;
 }
 
-function parseCandles(value: unknown): Candle[] | null {
+function parseCandles(value: unknown): any[] | null {
   if (!Array.isArray(value)) return null;
   return value.map((c: any) => ({
     t: Number(c.t ?? c[0]), o: Number(c.o ?? c[1]), h: Number(c.h ?? c[2]),
@@ -24,7 +21,7 @@ function parseCandles(value: unknown): Candle[] | null {
   })).filter(c => [c.t, c.o, c.h, c.l, c.c, c.v].every(Number.isFinite));
 }
 
-async function fetchFuturesCandles(symbol: string, interval: string, limit: number): Promise<Candle[]> {
+async function fetchFuturesCandles(symbol: string, interval: string, limit: number): Promise<any[]> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 8000);
   try {
@@ -59,6 +56,7 @@ export default async function handler(request: Request): Promise<Response> {
     const limit = Math.min(1500, Math.max(260, Number(body.limit || query.get('limit') || 500)));
     const suppliedCandles = parseCandles(body.candles);
     const candles = suppliedCandles || await fetchFuturesCandles(symbol, timeframe, limit);
+    const { evaluateLeo21Strategy } = await import('../../lib/strategies/leo21Strategy');
     const snapshot = evaluateLeo21Strategy(candles, symbol, timeframe, {
       sensitivity: Number(body.sensitivity || query.get('sensitivity') || 5),
       atrLength: Number(body.atrLength || query.get('atrLength') || 14),
@@ -69,11 +67,7 @@ export default async function handler(request: Request): Promise<Response> {
       commissionRatePct: Number(body.commissionRatePct || query.get('commissionRatePct') || 0.05),
       slippageTicks: Number(body.slippageTicks || query.get('slippageTicks') || 1)
     }, Number(body.equity || query.get('equity') || 10000));
-    return json({
-      ok: true, strategy: 'LEO_2_1', source: suppliedCandles ? 'request' : 'binance-futures',
-      symbol, timeframe, candleCount: candles.length,
-      confirmedCandleTime: candles[candles.length - 2]?.t ?? null, ...snapshot
-    });
+    return json({ ok: true, strategy: 'LEO_2_1', source: suppliedCandles ? 'request' : 'binance-futures', symbol, timeframe, candleCount: candles.length, confirmedCandleTime: candles[candles.length - 2]?.t ?? null, ...snapshot });
   } catch (error: any) {
     return json({ ok: false, error: error?.message || 'Unable to evaluate strategy' }, 400);
   }
