@@ -1,4 +1,4 @@
-import { Candle, QuantSignal, SignalMetrics } from '../types';
+import type { Candle, QuantSignal, SignalMetrics } from '../types';
 import { calcATR, calcEMA, calcRSI, calcSMA } from '../indicators';
 
 export interface Leo21Config {
