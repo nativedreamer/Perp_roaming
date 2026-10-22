@@ -9,6 +9,7 @@ import {
 } from '../lib/binanceApi';
 import { evaluateOrderBlocksEmaStrategy } from '../lib/strategies/orderBlocksEmaStrategy';
 import { evaluateVwapEmaStrategy } from '../lib/strategies/vwapEmaStrategy';
+import { evaluateLeo21Strategy } from '../lib/strategies/leo21Strategy';
 import { calcATR, calcEMA, calcRSI, calcVWAP, calcSMA } from '../lib/indicators';
 import { playOrderFillSound, playSignalChime, playTakeProfitSound } from '../lib/audio';
 
@@ -213,7 +214,7 @@ export default function DashboardPage() {
         }
 
         try {
-          const candles = await fetchKlines(sym, currentTf, 80);
+          const candles = await fetchKlines(sym, currentTf, configRef.current.activeStrategy === 'LEO_2_1' ? 320 : 80);
           if (!isCancelled && candles.length >= 35) {
             const latestCandle = candles[candles.length - 1];
             const currentCfg = configRef.current;
@@ -233,6 +234,15 @@ export default function DashboardPage() {
               sig = evaluateOrderBlocksEmaStrategy(candles, sym, currentTf, currentCfg);
             } else if (currentCfg.activeStrategy === 'VWAP_EMA') {
               sig = evaluateVwapEmaStrategy(candles, sym, currentTf, currentCfg);
+            } else if (currentCfg.activeStrategy === 'LEO_2_1') {
+              sig = evaluateLeo21Strategy(candles, sym, currentTf, {
+                sensitivity: 5,
+                atrLength: 14,
+                atrBandMultiplier: 2.2,
+                targetR: 2,
+                riskPct: currentCfg.riskPerTradePct,
+                maxLeverage: currentCfg.defaultLeverage
+              }).signal;
             } else {
               sig = evaluateOrderBlocksEmaStrategy(candles, sym, currentTf, currentCfg) ||
                     evaluateVwapEmaStrategy(candles, sym, currentTf, currentCfg);

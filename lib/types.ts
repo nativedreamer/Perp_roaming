@@ -55,7 +55,7 @@ export interface QuantSignal {
   tp2Price: number;
   tp3Price: number;
   strengthScore: number; // 0-100
-  strategyName: 'ORDER_BLOCKS_EMA' | 'VWAP_EMA' | 'HYBRID_CONFLUENCE';
+  strategyName: 'ORDER_BLOCKS_EMA' | 'VWAP_EMA' | 'HYBRID_CONFLUENCE' | 'LEO_2_1';
   timestamp: number;
   metrics: SignalMetrics;
   orderBlocks?: OrderBlockInfo[];
@@ -126,7 +126,7 @@ export interface PaperAccount {
 }
 
 export interface StrategyConfig {
-  activeStrategy: 'ORDER_BLOCKS_EMA' | 'VWAP_EMA' | 'HYBRID_CONFLUENCE';
+  activeStrategy: 'ORDER_BLOCKS_EMA' | 'VWAP_EMA' | 'HYBRID_CONFLUENCE' | 'LEO_2_1';
   // EMA Cross & Order Blocks inputs (Pine Script v6)
   fastMA: number; // 10
   slowMA: number; // 30

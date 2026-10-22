@@ -40,7 +40,7 @@ export const StrategySettingsModal: React.FC<StrategySettingsModalProps> = ({
             <label className="text-[11px] text-cyan-300 font-bold block mb-2 uppercase flex items-center gap-1.5">
               <Cpu className="w-3.5 h-3.5" /> Core Quantitative Engine
             </label>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
               <button
                 onClick={() => onUpdateConfig({ activeStrategy: 'ORDER_BLOCKS_EMA' })}
                 className={`p-2.5 rounded-lg border text-left flex flex-col gap-1 transition-all ${
@@ -84,6 +84,20 @@ export const StrategySettingsModal: React.FC<StrategySettingsModalProps> = ({
                   {config.activeStrategy === 'HYBRID_CONFLUENCE' && <Check className="w-3 h-3 text-purple-400" />}
                 </span>
                 <span className="text-[10px] text-slate-300">Dual Engine Confluence Radar</span>
+              </button>
+              <button
+                onClick={() => onUpdateConfig({ activeStrategy: 'LEO_2_1' })}
+                className={`p-2.5 rounded-lg border text-left flex flex-col gap-1 transition-all ${
+                  config.activeStrategy === 'LEO_2_1'
+                    ? 'bg-amber-950/60 border-amber-400 text-white shadow-[0_0_12px_rgba(251,191,36,0.25)]'
+                    : 'bg-[#0a0f1d] border-slate-800 text-slate-400 hover:text-white'
+                }`}
+              >
+                <span className="font-bold text-[11px] text-amber-400 flex items-center gap-1">
+                  Leo 2:1 Backtest
+                  {config.activeStrategy === 'LEO_2_1' && <Check className="w-3 h-3 text-amber-400" />}
+                </span>
+                <span className="text-[10px] text-slate-300">Supertrend + MACD + EMA150/250 + risk sizing</span>
               </button>
             </div>
           </div>
